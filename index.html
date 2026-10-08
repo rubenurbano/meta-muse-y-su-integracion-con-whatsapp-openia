@@ -1,0 +1,3190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meta Muse y su integración con WhatsApp — Tutorial</title>
+<meta name="description" content="Tutorial práctico para entender qué es Meta Muse, cómo se integra con WhatsApp y cómo mantener el control sobre permisos y datos.">
+<style>
+/* ============================================================
+   VARIABLES DE TEMA
+   ============================================================ */
+:root{
+  --bg:#0a0e1a;
+  --card:#0f172a;
+  --card2:#132039;
+  --accent:#1e3a5f;
+  --accent2:#38bdf8;
+  --accent3:#22d3ee;
+  --text:#e6edf7;
+  --muted:#9fb0c9;
+  --border:#1e2b45;
+  --ok:#22c55e;
+  --warn:#f59e0b;
+  --bad:#ef4444;
+  --tab-on-bg:#1e3a5f;
+  --tab-on-fg:#e6f4ff;
+  --radius:14px;
+  --shadow:0 8px 24px rgba(0,0,0,.35);
+}
+body.light{
+  --bg:#f2f6fb;
+  --card:#ffffff;
+  --card2:#eef4fb;
+  --accent:#dbeafe;
+  --accent2:#0b6bcb;
+  --accent3:#0891b2;
+  --text:#0e1726;
+  --muted:#4d5f78;
+  --border:#cbd5e1;
+  --ok:#15803d;
+  --warn:#b45309;
+  --bad:#b91c1c;
+  --tab-on-bg:#0b6bcb;
+  --tab-on-fg:#ffffff;
+  --shadow:0 6px 18px rgba(15,23,42,.10);
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+*{box-sizing:border-box}
+html{font-size:100%;-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:1rem;
+  line-height:1.65;
+  transition:background .25s ease,color .25s ease;
+  overflow-x:hidden;
+}
+img,svg{max-width:100%}
+a{color:var(--accent2)}
+.wrap{max-width:1040px;margin:0 auto;padding:0 1rem}
+
+/* ============================================================
+   BARRA DE PROGRESO
+   ============================================================ */
+.progress-bar{
+  position:fixed;top:0;left:0;width:100%;height:4px;z-index:200;
+  pointer-events:none;background:transparent;
+}
+.progress-bar > i{
+  display:block;height:100%;width:0;
+  background:linear-gradient(90deg,#38bdf8,#22d3ee);
+  transition:width .12s linear;
+}
+
+/* ============================================================
+   TOOLBAR
+   ============================================================ */
+.toolbar{
+  background:var(--card);
+  border-bottom:1px solid var(--border);
+  padding:.6rem 0;
+}
+.toolbar-inner{
+  display:flex;flex-wrap:wrap;gap:.5rem;
+  align-items:center;justify-content:space-between;
+}
+.brand{
+  font-weight:800;font-size:.92rem;letter-spacing:.02em;
+  color:var(--text);white-space:nowrap;
+}
+.brand span{color:var(--accent2)}
+.tools{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center}
+.btn{
+  border:1px solid var(--border);
+  background:var(--card2);
+  color:var(--text);
+  border-radius:9px;
+  padding:.42rem .62rem;
+  font-size:.8rem;
+  font-weight:600;
+  cursor:pointer;
+  line-height:1;
+  transition:background .15s ease,border-color .15s ease,transform .1s ease;
+}
+.btn:hover{background:var(--accent);border-color:var(--accent2)}
+.btn:active{transform:scale(.96)}
+.btn.primary{background:var(--accent);border-color:var(--accent2);color:var(--text)}
+#searchInput{
+  border:1px solid var(--border);
+  background:var(--card2);
+  color:var(--text);
+  border-radius:9px;
+  padding:.45rem .6rem;
+  font-size:.82rem;
+  min-width:11rem;
+  max-width:100%;
+  font-family:inherit;
+}
+#searchInput::placeholder{color:var(--muted)}
+.search-info{
+  font-size:.78rem;color:var(--muted);
+  padding:.35rem .1rem 0;
+}
+.search-info b{color:var(--accent2)}
+.print-notice{
+  margin-top:.5rem;
+  background:var(--card2);
+  border:1px solid var(--warn);
+  border-left-width:4px;
+  border-radius:10px;
+  padding:.6rem .75rem;
+  font-size:.82rem;
+  color:var(--text);
+}
+
+/* ============================================================
+   PESTAÑAS
+   ============================================================ */
+.tabs{
+  position:sticky;top:0;z-index:90;
+  display:flex;gap:.4rem;
+  overflow-x:auto;
+  padding:.6rem 1rem;
+  background:var(--card);
+  border-bottom:1px solid var(--border);
+  scrollbar-width:thin;
+  -webkit-overflow-scrolling:touch;
+}
+.tabs::-webkit-scrollbar{height:5px}
+.tabs::-webkit-scrollbar-thumb{background:var(--accent);border-radius:9px}
+.tab{
+  flex:0 0 auto;
+  border:1px solid var(--border);
+  background:transparent;
+  color:var(--muted);
+  padding:.45rem .85rem;
+  border-radius:999px;
+  font-size:.8rem;
+  font-weight:700;
+  letter-spacing:.02em;
+  cursor:pointer;
+  white-space:nowrap;
+  font-family:inherit;
+  transition:background .15s ease,color .15s ease,border-color .15s ease;
+}
+.tab:hover{color:var(--text);border-color:var(--accent2)}
+.tab.active{
+  background:var(--tab-on-bg);
+  color:var(--tab-on-fg);
+  border-color:var(--accent2);
+}
+
+/* ============================================================
+   PANELES
+   ============================================================ */
+.panel{display:none;padding:1.2rem 0 4rem}
+.panel.active{display:block;animation:fadeIn .28s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ============================================================
+   TIPOGRAFÍA
+   ============================================================ */
+h1{font-size:1.7rem;line-height:1.25;margin:.2rem 0 .4rem;font-weight:800}
+h2{
+  font-size:1.28rem;line-height:1.3;margin:2rem 0 .8rem;
+  padding-left:.7rem;border-left:4px solid var(--accent2);
+  font-weight:800;
+}
+h3{font-size:1.06rem;margin:1.4rem 0 .5rem;font-weight:700;color:var(--text)}
+h4{font-size:.97rem;margin:1.1rem 0 .4rem;font-weight:700;color:var(--accent2)}
+p{margin:.65rem 0}
+ul,ol{margin:.6rem 0;padding-left:1.4rem}
+li{margin:.3rem 0}
+strong{font-weight:700}
+code{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:.86em;
+  background:var(--card2);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:.08em .35em;
+  word-break:break-word;
+}
+.lead{font-size:1.02rem;color:var(--muted)}
+.subtitle{color:var(--muted);font-size:.95rem;margin-top:-.2rem}
+.meta-line{
+  font-size:.82rem;color:var(--muted);
+  border-top:1px dashed var(--border);
+  border-bottom:1px dashed var(--border);
+  padding:.5rem 0;margin:.9rem 0;
+}
+
+/* ============================================================
+   TARJETAS Y CAJAS
+   ============================================================ */
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:1rem 1.1rem;
+  margin:0 0 1rem;
+  box-shadow:var(--shadow);
+}
+.card.tight{padding:.8rem .9rem}
+.box{
+  border-radius:12px;
+  padding:.85rem 1rem;
+  margin:.9rem 0;
+  border-left:4px solid var(--accent2);
+  background:var(--card2);
+}
+.box.warn{border-left-color:var(--warn)}
+.box.bad{border-left-color:var(--bad)}
+.box.ok{border-left-color:var(--ok)}
+.box .box-title{font-weight:800;display:block;margin-bottom:.25rem;font-size:.9rem;letter-spacing:.03em;text-transform:uppercase;color:var(--muted)}
+.box.warn .box-title{color:var(--warn)}
+.box.bad .box-title{color:var(--bad)}
+.box.ok .box-title{color:var(--ok)}
+
+/* ============================================================
+   SVG HERO
+   ============================================================ */
+.hero-svg-mount{
+  width:100%;
+  margin:.6rem 0 .6rem;
+  border-radius:var(--radius);
+  overflow:hidden;
+  border:1px solid var(--border);
+  background:var(--card);
+  line-height:0;
+}
+.hero-svg-mount svg{display:block;width:100%;height:auto}
+.hero-svg-mount img{display:block;width:100%;height:auto}
+.svg-caption{
+  font-size:.85rem;color:var(--muted);
+  margin:.2rem 0 1.2rem;
+  line-height:1.55;
+}
+
+/* ============================================================
+   BLOQUES DE CÓDIGO / URL COPIABLES
+   ============================================================ */
+.copy-wrap{
+  display:flex;gap:.5rem;align-items:stretch;
+  flex-wrap:wrap;margin:.6rem 0;
+}
+.url-block,pre.url-block{
+  flex:1 1 240px;
+  background:var(--card2);
+  border:1px dashed var(--border);
+  border-radius:10px;
+  padding:.6rem .7rem;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:.8rem;
+  white-space:pre-wrap;
+  word-break:break-all;
+  margin:0;
+  overflow:visible;
+  color:var(--text);
+  line-height:1.5;
+}
+.copyBtn{
+  flex:0 0 auto;
+  align-self:stretch;
+  border:1px solid var(--accent2);
+  background:var(--accent);
+  color:var(--text);
+  border-radius:10px;
+  padding:.45rem .8rem;
+  font-size:.78rem;
+  font-weight:700;
+  cursor:pointer;
+  font-family:inherit;
+  transition:background .15s ease,color .15s ease;
+}
+.copyBtn:hover{background:var(--accent2);color:#04121f}
+.copyBtn.done{background:var(--ok);border-color:var(--ok);color:#04121f}
+
+/* ============================================================
+   TABLAS
+   ============================================================ */
+.table-wrap{overflow-x:auto;margin:1rem 0;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:.9rem;min-width:520px}
+th,td{
+  border:1px solid var(--border);
+  padding:.55rem .7rem;
+  text-align:left;vertical-align:top;
+}
+th{background:var(--accent);color:var(--text);font-weight:800;font-size:.85rem}
+tbody tr:nth-child(even){background:var(--card2)}
+
+/* ============================================================
+   CHECKLIST
+   ============================================================ */
+.checklist{display:block;margin:.5rem 0}
+.checklist label{
+  display:flex;gap:.65rem;align-items:flex-start;
+  padding:.5rem .6rem;border-radius:10px;cursor:pointer;
+  transition:background .15s ease;
+  font-size:.93rem;
+}
+.checklist label:hover{background:var(--card2)}
+.checklist input[type="checkbox"]{
+  margin:.28rem 0 0;
+  width:1.15rem;height:1.15rem;flex:0 0 auto;
+  accent-color:#38bdf8;cursor:pointer;
+}
+.checklist input:checked + span{opacity:.7;text-decoration:line-through}
+.checklist-tools{
+  display:flex;gap:.5rem;flex-wrap:wrap;
+  align-items:center;margin:.7rem 0 .3rem;
+}
+.checklist-count{font-size:.84rem;color:var(--muted);font-weight:700}
+
+/* ============================================================
+   DETALLES / ACORDEONES
+   ============================================================ */
+details{
+  background:var(--card2);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:.55rem .8rem;
+  margin:.6rem 0;
+}
+details summary{
+  cursor:pointer;font-weight:700;font-size:.94rem;
+  list-style:none;outline:none;
+  display:flex;justify-content:space-between;gap:.6rem;align-items:center;
+}
+details summary::-webkit-details-marker{display:none}
+details summary::after{content:"+";font-weight:800;color:var(--accent2);font-size:1.1rem}
+details[open] summary::after{content:"−"}
+details[open]{padding-bottom:.8rem}
+details .details-body{margin-top:.5rem;font-size:.93rem}
+
+/* ============================================================
+   PASOS
+   ============================================================ */
+ol.steps{padding-left:1.3rem}
+ol.steps > li{margin-bottom:.85rem}
+.step-goal{
+  display:inline-block;font-size:.75rem;font-weight:800;
+  letter-spacing:.05em;text-transform:uppercase;
+  color:var(--accent2);margin-bottom:.15rem;
+}
+
+/* ============================================================
+   BOTÓN VOLVER ARRIBA
+   ============================================================ */
+.to-top{
+  position:fixed;right:1rem;bottom:1rem;z-index:120;
+  width:46px;height:46px;border-radius:50%;
+  border:1px solid var(--accent2);
+  background:var(--card);color:var(--text);
+  font-size:1.15rem;font-weight:800;cursor:pointer;
+  box-shadow:var(--shadow);
+  display:none;
+  align-items:center;justify-content:center;
+}
+.to-top.show{display:flex}
+
+/* ============================================================
+   AUTOR
+   ============================================================ */
+.author-card{text-align:center;border-color:var(--accent2)}
+.author-card h1{
+  font-size:2rem;margin:.4rem 0 .1rem;
+  color:var(--accent2);
+  letter-spacing:.01em;
+}
+.author-role{
+  font-weight:800;color:var(--text);
+  font-size:.95rem;letter-spacing:.08em;text-transform:uppercase;
+  margin:.1rem 0 .8rem;
+}
+.stamp{
+  display:inline-block;
+  background:var(--card2);
+  border:1px dashed var(--border);
+  border-radius:10px;
+  padding:.5rem .8rem;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:.86rem;
+  color:var(--text);
+  margin:.2rem 0;
+}
+.version-badge{
+  display:inline-block;
+  background:var(--accent);
+  border:1px solid var(--accent2);
+  color:var(--text);
+  border-radius:999px;
+  padding:.25rem .8rem;
+  font-size:.8rem;font-weight:800;letter-spacing:.06em;
+  margin:.4rem 0;
+}
+
+/* ============================================================
+   IMPRESIÓN / PDF
+   ============================================================ */
+@media print{
+  @page{size:A4 portrait;margin:14mm 12mm;}
+
+  html,body{
+    background:#fff !important;
+    color:#000 !important;
+    padding:0 !important;
+    margin:0 !important;
+    font-size:11pt !important;
+    line-height:1.45 !important;
+    overflow:visible !important;
+  }
+
+  :root,body.light{
+    --bg:#fff;
+    --card:#fff;
+    --card2:#fff;
+    --accent:#e5e7eb;
+    --accent2:#000;
+    --accent3:#000;
+    --text:#000;
+    --muted:#333;
+    --border:#999;
+    --shadow:none;
+  }
+
+  *{
+    background-image:none !important;
+    box-shadow:none !important;
+    text-shadow:none !important;
+    -webkit-text-fill-color:#000 !important;
+    background-clip:border-box !important;
+    -webkit-background-clip:border-box !important;
+  }
+
+  .toolbar,.tabs,.to-top,.copyBtn,.progress-bar,.search-info,.print-notice,
+  .checklist-tools,.no-print{
+    display:none !important;
+  }
+
+  mark.search-hl{
+    background:transparent !important;
+    color:inherit !important;
+    padding:0 !important;
+  }
+
+  .panel{
+    display:block !important;
+    page-break-after:auto !important;
+    break-after:auto !important;
+    animation:none !important;
+    padding:0 0 .6rem !important;
+  }
+  .panel + .panel{
+    page-break-before:always;
+    break-before:page;
+  }
+
+  .card,.box,details,.hero-svg-mount{
+    background:#fff !important;
+    border:1px solid #bbb !important;
+    color:#000 !important;
+    page-break-inside:avoid;
+    break-inside:avoid;
+  }
+  .hero-svg-mount{
+    page-break-inside:avoid;
+    break-inside:avoid;
+    display:block !important;
+  }
+  .hero-svg-mount svg,
+  .hero-svg-mount img{
+    display:block !important;
+    width:100% !important;
+    height:auto !important;
+    max-height:70mm;
+  }
+
+  h1,h2,h3,h4,.author-card h1,.version-badge,.stamp{
+    color:#000 !important;
+    background:none !important;
+    -webkit-text-fill-color:#000 !important;
+    page-break-after:avoid;
+    break-after:avoid;
+  }
+  h1{font-size:20pt !important}
+  h2{font-size:15pt !important;border-left:4px solid #000 !important;padding-left:6pt !important}
+  h3{font-size:12.5pt !important}
+  p,li,td,th{color:#000 !important}
+
+  a{color:#000 !important;text-decoration:underline}
+
+  .url-block,pre,code{
+    background:#fff !important;
+    border:1px solid #999 !important;
+    color:#000 !important;
+    font-size:9pt !important;
+  }
+  pre,table{
+    overflow:visible !important;
+    white-space:pre-wrap !important;
+    word-break:break-word !important;
+    page-break-inside:auto;
+  }
+
+  table{width:100% !important;min-width:0 !important;font-size:9.5pt !important}
+  th{background:#e5e7eb !important;color:#000 !important;border:1px solid #777 !important}
+  td{border:1px solid #999 !important}
+  tbody tr:nth-child(even){background:#fff !important}
+
+  details{display:block !important;padding:4pt 6pt !important}
+  details > summary{font-weight:800}
+  details > summary::after{content:"" !important}
+  details > .details-body{display:block !important}
+
+  .checklist input[type="checkbox"]{
+    -webkit-appearance:checkbox !important;
+    appearance:checkbox !important;
+    accent-color:#000 !important;
+    opacity:1 !important;
+    width:12pt !important;height:12pt !important;
+  }
+  .checklist label{page-break-inside:avoid}
+
+  .version-badge,.stamp{
+    border:1px solid #000 !important;
+    color:#000 !important;
+    background:#fff !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     SVG FUENTE OCULTO — ÚNICO DIBUJO, SE EXTRAE COMO PLANTILLA
+     ============================================================ -->
+<svg id="svgHeroSource" width="0" height="0" style="position:absolute;left:-9999px;top:0" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="gBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b1428"/>
+      <stop offset="100%" stop-color="#12203a"/>
+    </linearGradient>
+    <linearGradient id="gAcc" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#22d3ee"/>
+    </linearGradient>
+    <filter id="fGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="5" result="blurOut"/>
+      <feMerge>
+        <feMergeNode in="blurOut"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <g id="svgHero">
+
+    <!-- Fondo -->
+    <rect x="6" y="6" width="808" height="248" rx="22" fill="url(#gBg)" stroke="#1e3a5f" stroke-width="2"/>
+
+    <!-- Conexiones -->
+    <line x1="102" y1="130" x2="286" y2="130" stroke="#1e3a5f" stroke-width="2" stroke-dasharray="8 8">
+      <animate attributeName="stroke-dashoffset" values="0;-32" dur="1.6s" repeatCount="indefinite"/>
+    </line>
+    <line x1="354" y1="130" x2="502" y2="130" stroke="#1e3a5f" stroke-width="2" stroke-dasharray="8 8">
+      <animate attributeName="stroke-dashoffset" values="0;-32" dur="1.6s" repeatCount="indefinite"/>
+    </line>
+    <line x1="578" y1="130" x2="698" y2="130" stroke="#1e3a5f" stroke-width="2" stroke-dasharray="8 8">
+      <animate attributeName="stroke-dashoffset" values="0;-32" dur="1.6s" repeatCount="indefinite"/>
+    </line>
+
+    <!-- Burbuja: define el objetivo -->
+    <g opacity="1">
+      <animate attributeName="opacity" values="0.55;1;1;0.55" dur="6s" repeatCount="indefinite"/>
+      <rect x="14" y="38" width="132" height="60" rx="16" fill="#1e3a5f" stroke="#38bdf8" stroke-width="1.5"/>
+      <text x="80" y="63" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="15" font-weight="700" fill="#e0f2fe">Define el</text>
+      <text x="80" y="84" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="15" font-weight="700" fill="#e0f2fe">objetivo</text>
+    </g>
+
+    <!-- Usuario -->
+    <circle cx="80" cy="130" r="20" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
+    <circle cx="80" cy="122" r="6" fill="#38bdf8"/>
+    <path d="M68 143 q12 10 24 0" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/>
+    <text x="80" y="180" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="18" font-weight="800" fill="#7dd3fc">TÚ</text>
+
+    <!-- Núcleo Muse -->
+    <circle cx="320" cy="130" r="34" fill="none" stroke="#38bdf8" stroke-width="2" opacity="0.6">
+      <animate attributeName="r" values="34;66" dur="2.6s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.6;0" dur="2.6s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="320" cy="130" r="34" fill="none" stroke="#22d3ee" stroke-width="2" opacity="0.6">
+      <animate attributeName="r" values="34;66" dur="2.6s" begin="1.3s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.6;0" dur="2.6s" begin="1.3s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="320" cy="130" r="32" fill="url(#gAcc)" filter="url(#fGlow)"/>
+    <g opacity="1">
+      <animate attributeName="opacity" values="0.7;1;0.7" dur="2.6s" repeatCount="indefinite"/>
+      <path d="M320 110 L326 124 L340 130 L326 136 L320 150 L314 136 L300 130 L314 124 Z" fill="#04121f"/>
+    </g>
+    <text x="320" y="182" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="18" font-weight="800" fill="#7dd3fc">MUSE</text>
+
+    <!-- Sentinel -->
+    <g>
+      <animate attributeName="opacity" values="0.72;1;0.72" dur="2.2s" repeatCount="indefinite"/>
+      <path d="M540 96 L572 108 L572 140 C572 164 556 176 540 182 C524 176 508 164 508 140 L508 108 Z"
+            fill="#1e3a5f" stroke="#facc15" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M527 138 L537 149 L555 127" fill="none" stroke="#facc15" stroke-width="3.4"
+            stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <text x="540" y="204" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="18" font-weight="800" fill="#fde68a">SENTINEL</text>
+
+    <!-- Herramientas -->
+    <circle cx="720" cy="76" r="19" fill="none" stroke="#38bdf8" stroke-width="2" opacity="0">
+      <animate attributeName="r" values="19;33" dur="3s" begin="0.2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.7;0" dur="3s" begin="0.2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="720" cy="76" r="19" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
+    <rect x="710" y="69" width="20" height="14" rx="2.5" fill="none" stroke="#38bdf8" stroke-width="1.6"/>
+    <path d="M710 71 L720 78 L730 71" fill="none" stroke="#38bdf8" stroke-width="1.6" stroke-linejoin="round"/>
+
+    <circle cx="720" cy="130" r="19" fill="none" stroke="#22d3ee" stroke-width="2" opacity="0">
+      <animate attributeName="r" values="19;33" dur="3s" begin="1.2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.7;0" dur="3s" begin="1.2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="720" cy="130" r="19" fill="#0f172a" stroke="#22d3ee" stroke-width="2"/>
+    <rect x="710" y="123" width="20" height="16" rx="2.5" fill="none" stroke="#22d3ee" stroke-width="1.6"/>
+    <line x1="710" y1="128" x2="730" y2="128" stroke="#22d3ee" stroke-width="1.6"/>
+    <line x1="715" y1="120" x2="715" y2="125" stroke="#22d3ee" stroke-width="1.8" stroke-linecap="round"/>
+    <line x1="725" y1="120" x2="725" y2="125" stroke="#22d3ee" stroke-width="1.8" stroke-linecap="round"/>
+
+    <circle cx="720" cy="184" r="19" fill="none" stroke="#a78bfa" stroke-width="2" opacity="0">
+      <animate attributeName="r" values="19;33" dur="3s" begin="2.2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.7;0" dur="3s" begin="2.2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="720" cy="184" r="19" fill="#0f172a" stroke="#a78bfa" stroke-width="2"/>
+    <circle cx="720" cy="184" r="8" fill="none" stroke="#a78bfa" stroke-width="1.6"/>
+    <ellipse cx="720" cy="184" rx="3.5" ry="8" fill="none" stroke="#a78bfa" stroke-width="1.4"/>
+    <line x1="712" y1="184" x2="728" y2="184" stroke="#a78bfa" stroke-width="1.4"/>
+
+    <text x="720" y="226" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="18" font-weight="800" fill="#c4b5fd">HERRAMIENTAS</text>
+
+    <!-- Punto viajero: ida -->
+    <circle r="6" cx="0" cy="0" fill="#22d3ee" filter="url(#fGlow)">
+      <animateMotion dur="6s" repeatCount="indefinite" calcMode="linear"
+        keyTimes="0;0.28;0.42;0.58;0.72;1"
+        keyPoints="0;0.35;0.35;0.68;0.68;1"
+        path="M80,130 L320,130 L540,130 L720,130"/>
+      <animate attributeName="opacity" values="0;1;1;1;1;0" dur="6s" repeatCount="indefinite"/>
+    </circle>
+
+    <!-- Punto viajero: vuelta con el resultado -->
+    <circle r="5" cx="0" cy="0" fill="#22c55e" filter="url(#fGlow)">
+      <animateMotion dur="6s" begin="3s" repeatCount="indefinite" calcMode="linear"
+        keyTimes="0;0.28;0.42;0.58;0.72;1"
+        keyPoints="0;0.32;0.32;0.65;0.65;1"
+        path="M720,130 L540,130 L320,130 L80,130"/>
+      <animate attributeName="opacity" values="0;1;1;1;1;0" dur="6s" begin="3s" repeatCount="indefinite"/>
+    </circle>
+
+  </g>
+</svg>
+
+<!-- ============================================================
+     BARRA DE PROGRESO
+     ============================================================ -->
+<div class="progress-bar" aria-hidden="true"><i id="progressFill"></i></div>
+
+<!-- ============================================================
+     TOOLBAR
+     ============================================================ -->
+<div class="toolbar">
+  <div class="wrap toolbar-inner">
+    <div class="brand">Meta Muse <span>·</span> Tutorial</div>
+    <div class="tools">
+      <input id="searchInput" type="search" placeholder="Buscar en el tutorial…" aria-label="Buscar texto en el tutorial">
+      <button class="btn" id="searchClear" type="button" title="Limpiar búsqueda">✕</button>
+      <button class="btn" id="btnSmaller" type="button" title="Reducir tamaño del texto">A−</button>
+      <button class="btn" id="btnBigger" type="button" title="Aumentar tamaño del texto">A+</button>
+      <button class="btn" id="btnTheme" type="button" title="Cambiar entre modo oscuro y claro">🌗 Tema</button>
+      <button class="btn primary" id="btnPrint" type="button" title="Imprimir o guardar como PDF">🖨 PDF</button>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="search-info" id="searchInfo" hidden></div>
+    <div class="print-notice" id="printNotice" hidden></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PESTAÑAS
+     ============================================================ -->
+<nav class="tabs" role="tablist" aria-label="Secciones del tutorial">
+  <button class="tab active" data-target="p-inicio" role="tab" aria-selected="true" type="button">INICIO</button>
+  <button class="tab" data-target="p-conceptos" role="tab" aria-selected="false" type="button">CONCEPTOS</button>
+  <button class="tab" data-target="p-procedimiento" role="tab" aria-selected="false" type="button">PROCEDIMIENTO</button>
+  <button class="tab" data-target="p-privacidad" role="tab" aria-selected="false" type="button">PRIVACIDAD</button>
+  <button class="tab" data-target="p-practica" role="tab" aria-selected="false" type="button">PRÁCTICA</button>
+  <button class="tab" data-target="p-errores" role="tab" aria-selected="false" type="button">ERRORES</button>
+  <button class="tab" data-target="p-resumen" role="tab" aria-selected="false" type="button">RESUMEN</button>
+  <button class="tab" data-target="p-fuentes" role="tab" aria-selected="false" type="button">FUENTES</button>
+  <button class="tab" data-target="p-creditos" role="tab" aria-selected="false" type="button">CRÉDITOS</button>
+</nav>
+
+<main class="wrap">
+
+<!-- ============================================================
+     PANEL: INICIO
+     ============================================================ -->
+<section class="panel active" id="p-inicio" role="tabpanel" aria-label="Inicio">
+
+  <h1>Meta Muse y su integración con WhatsApp</h1>
+  <p class="subtitle">Tutorial práctico — Aprender Haciendo</p>
+
+  <div class="hero-svg-mount" data-svg-hero="true" role="img"
+       aria-label="Diagrama animado: tú defines el objetivo, el agente Muse lo procesa, Sentinel supervisa y las herramientas conectadas se activan solo con tu permiso, devolviéndote el resultado."></div>
+  <p class="svg-caption">
+    El mismo diagrama aparece también en la pestaña <strong>CRÉDITOS</strong>. Léelo así:
+    <strong>tú</strong> defines el objetivo → <strong>Muse</strong> trabaja →
+    <strong>Sentinel</strong> supervisa y pide permiso → las <strong>herramientas</strong> se usan
+    solo con las conexiones que tú autorizas → y el resultado vuelve a ti.
+  </p>
+
+  <div class="meta-line">
+    <strong>Estado de la información:</strong> 7 de octubre de 2026 ·
+    <strong>Nivel:</strong> desde cero, sin conocimientos técnicos
+  </div>
+
+  <h2>¿De qué va este tutorial?</h2>
+  <div class="card">
+    <p>
+      Este tutorial explica, en lenguaje sencillo, qué es un <strong>agente de IA</strong>,
+      qué hace <strong>Meta Muse</strong>, cómo se integra con <strong>WhatsApp</strong> y
+      —lo más importante— cómo trabajar con él <strong>sin perder el control</strong>
+      sobre sus permisos y tus datos.
+    </p>
+    <p>
+      No hace falta saber programar. No hace falta saber informática. Solo hace falta entender
+      una idea: <strong>delegar no es lo mismo que soltar el volante</strong>.
+    </p>
+  </div>
+
+  <h2>Qué vas a aprender</h2>
+  <div class="card">
+    <ul>
+      <li>La diferencia entre un <strong>chatbot</strong>, un <strong>asistente</strong> y un <strong>agente</strong> de IA.</li>
+      <li>Qué es Muse y qué piezas lo forman (Muse Spark, Muse Secure VM, el navegador, el trabajo en segundo plano).</li>
+      <li>Qué papel juega <strong>Sentinel</strong> como capa de supervisión.</li>
+      <li>Qué significa «conectar una aplicación» y por qué los permisos son la clave de todo.</li>
+      <li>Cómo se usa Muse <strong>desde WhatsApp</strong> y qué <em>no</em> debes dar por hecho.</li>
+      <li>Cómo escribir instrucciones a un agente: <strong>objetivo + contexto + límites + resultado esperado</strong>.</li>
+      <li>Cómo funciona la memoria, el historial, los permisos y los datos (y por qué no son lo mismo).</li>
+      <li>Qué está confirmado por Meta y qué no lo está lo suficiente como para enseñarlo como un hecho.</li>
+    </ul>
+  </div>
+
+  <h2>¿Para qué sirve?</h2>
+  <div class="card">
+    <p>
+      Sirve para que puedas usar un agente personal <strong>con criterio</strong>.
+      Al terminar sabrás:
+    </p>
+    <ul>
+      <li>darle trabajo a Muse de forma segura;</li>
+      <li>revisar y aprobar acciones sensibles;</li>
+      <li>reducir o retirar permisos cuando cambies de opinión;</li>
+      <li>y distinguir entre lo que una herramienta <em>puede</em> hacer y lo que <em>deberías</em> dejarle hacer.</li>
+    </ul>
+  </div>
+
+  <h2>¿Qué necesitas antes de empezar?</h2>
+  <div class="card">
+    <h4>Obligatorio</h4>
+    <ul>
+      <li>Un dispositivo compatible (iPhone, Android o muse.ai).</li>
+      <li>Conexión a Internet.</li>
+      <li>Acceso al servicio Muse y una cuenta que pueda usarlo.</li>
+      <li>WhatsApp, si quieres usar la interfaz de WhatsApp.</li>
+      <li><strong>Ser elegible en tu ubicación</strong> (esto es importante: ver la sección de disponibilidad).</li>
+    </ul>
+    <h4>Opcional</h4>
+    <ul>
+      <li>Servicios o aplicaciones adicionales conectadas. <strong>No necesitas conectar nada</strong> para aprender el concepto.</li>
+      <li>De hecho, para el primer ejercicio es mejor empezar con una tarea de bajo riesgo y sin conexiones.</li>
+    </ul>
+  </div>
+
+  <h2>Objetivos del tutorial</h2>
+  <div class="card">
+    <ol>
+      <li>Entender qué es un agente de IA y en qué se diferencia de un chatbot.</li>
+      <li>Conocer qué hace Meta Muse y sobre qué arquitectura funciona.</li>
+      <li>Comprender la integración con WhatsApp sin exagerarla ni inventarla.</li>
+      <li>Aprender a formular tareas con límites y condiciones de aprobación.</li>
+      <li>Saber auditar qué recuerda el agente y cómo retirar permisos.</li>
+    </ol>
+  </div>
+
+  <h2>Cómo utilizar este tutorial</h2>
+  <div class="card">
+    <ol class="steps">
+      <li>
+        <span class="step-goal">Paso 1</span>
+        <strong>Empieza por INICIO.</strong> Ya lo estás haciendo.
+        Motivo: aquí están el mapa y los requisitos.
+      </li>
+      <li>
+        <span class="step-goal">Paso 2</span>
+        <strong>Sigue con CONCEPTOS.</strong>
+        Motivo: sin entender qué es un agente, las instrucciones del resto se aplican a ciegas.
+      </li>
+      <li>
+        <span class="step-goal">Paso 3</span>
+        <strong>Continúa con PROCEDIMIENTO.</strong>
+        Motivo: aquí está el ciclo completo
+        <em>objetivo → trabajo → revisión → aprobación</em>.
+      </li>
+      <li>
+        <span class="step-goal">Paso 4</span>
+        <strong>Lee PRIVACIDAD con calma.</strong>
+        Motivo: es la sección más importante del tutorial.
+      </li>
+      <li>
+        <span class="step-goal">Paso 5</span>
+        <strong>Haz los retos de PRÁCTICA.</strong>
+        Motivo: se aprende haciendo, no leyendo.
+      </li>
+      <li>
+        <span class="step-goal">Paso 6</span>
+        <strong>Revisa ERRORES y RESUMEN.</strong>
+        Motivo: ahí se desmontan los mitos más habituales.
+      </li>
+      <li>
+        <span class="step-goal">Paso 7</span>
+        <strong>Usa FUENTES si quieres verificar algo.</strong>
+        Motivo: cada afirmación importante está respaldada por una fuente citada.
+      </li>
+    </ol>
+    <div class="box">
+      <span class="box-title">Trucos de la interfaz</span>
+      Arriba tienes un <strong>buscador</strong>, botones <strong>A− / A+</strong> para el tamaño del texto,
+      un botón de <strong>modo claro/oscuro</strong> y un botón <strong>🖨 PDF</strong> para imprimir o guardar el tutorial.
+      Todo funciona de verdad: pruébalo.
+    </div>
+  </div>
+
+  <h2>La idea de fondo (en una frase)</h2>
+  <div class="card">
+    <div class="box ok">
+      <span class="box-title">Recuerda esto</span>
+      <strong>Un chatbot te ayuda a pensar. Un agente puede ayudarte a actuar.</strong>
+      Y precisamente porque puede actuar, los permisos, la privacidad y la supervisión
+      dejan de ser detalles secundarios.
+    </div>
+    <p>
+      Y una segunda regla, todavía más importante:
+    </p>
+    <div class="box bad">
+      <span class="box-title">Regla de oro</span>
+      <strong>Que una tecnología pueda hacer algo no significa que debamos darle permiso para hacerlo.</strong>
+    </div>
+  </div>
+
+</section>
+
+<!-- ============================================================
+     PANEL: CONCEPTOS
+     ============================================================ -->
+<section class="panel" id="p-conceptos" role="tabpanel" aria-label="Conceptos">
+
+  <h2>1. Antes de empezar: qué es realmente un agente de IA</h2>
+
+  <div class="card">
+    <p><strong>Objetivo:</strong> entender la diferencia entre un chatbot, un asistente de IA y un agente de IA.</p>
+    <p>Imagina tres trabajadores.</p>
+
+    <h3>Trabajador 1 — Chatbot</h3>
+    <p>Le dices:</p>
+    <blockquote>«¿Cómo puedo organizar un viaje a Madrid?»</blockquote>
+    <p>Te responde con información. Pero tú tienes que continuar haciendo el trabajo.</p>
+
+    <h3>Trabajador 2 — Asistente de IA</h3>
+    <p>
+      Puede mantener una conversación más compleja, ayudarte a redactar documentos,
+      analizar información y organizar ideas. Hace más cosas, pero sigue dependiendo
+      bastante de tus instrucciones.
+    </p>
+
+    <h3>Trabajador 3 — Agente de IA</h3>
+    <p>Le dices:</p>
+    <blockquote>
+      «Quiero organizar un viaje a Madrid el mes que viene. Busca opciones, compara precios
+      y prepara un plan. Antes de comprar nada, pregúntame.»
+    </blockquote>
+    <p>
+      El agente puede dividir ese objetivo en tareas y utilizar herramientas para ejecutarlas.
+      Ese es el concepto que Meta aplica a Muse.
+    </p>
+  </div>
+
+  <div class="card">
+    <h3>👉 Haz esto</h3>
+    <p>Piensa en una tarea cotidiana que normalmente haces tú mismo. Por ejemplo:</p>
+    <blockquote>«Tengo que encontrar una cita médica, comprobar horarios y decidir qué opción me conviene.»</blockquote>
+    <p>Ahora imagina que en lugar de pedirle a una IA que te explique cómo hacerlo, le dices:</p>
+    <blockquote>«Encárgate de buscar las opciones y tráeme una propuesta. No confirmes ninguna cita sin preguntarme.»</blockquote>
+    <h3>💡 Por qué</h3>
+    <p>
+      La segunda instrucción no pide simplemente una respuesta. Define un <strong>objetivo</strong>,
+      unos <strong>límites</strong> y una <strong>condición de aprobación</strong>.
+      Esa forma de pensar será muy importante cuando utilices un agente.
+    </p>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Tipo</th><th>Qué hace</th><th>Quién ejecuta</th><th>Ejemplo de instrucción</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Chatbot</strong></td>
+          <td>Responde preguntas</td>
+          <td>Tú</td>
+          <td>«¿Cómo organizo un viaje?»</td>
+        </tr>
+        <tr>
+          <td><strong>Asistente</strong></td>
+          <td>Conversa, redacta y analiza</td>
+          <td>Tú, con ayuda</td>
+          <td>«Ayúdame a redactar este correo.»</td>
+        </tr>
+        <tr>
+          <td><strong>Agente</strong></td>
+          <td>Planifica, usa herramientas y ejecuta pasos</td>
+          <td>El agente, con tus permisos</td>
+          <td>«Busca opciones y prepárame un plan. No compres nada sin preguntarme.»</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>2. ¿Qué es Meta Muse?</h2>
+
+  <div class="card">
+    <p><strong>Objetivo:</strong> comprender las piezas principales que forman Muse sin necesidad de saber informática.</p>
+    <p>
+      Meta presenta Muse como un <strong>agente personal de IA</strong>. No es solamente un chat.
+      Según Meta, Muse puede:
+    </p>
+    <ul>
+      <li>responder preguntas;</li>
+      <li>realizar tareas;</li>
+      <li>navegar por la web;</li>
+      <li>completar formularios;</li>
+      <li>realizar compras;</li>
+      <li>crear documentos;</li>
+      <li>generar imágenes;</li>
+      <li>trabajar con aplicaciones y servicios conectados;</li>
+      <li>establecer recordatorios;</li>
+      <li>seguir objetivos;</li>
+      <li>vigilar determinadas cosas;</li>
+      <li>continuar trabajando en segundo plano.</li>
+    </ul>
+    <p>La diferencia esencial es que puede <strong>actuar</strong> utilizando herramientas.</p>
+  </div>
+
+  <h3>Las piezas de Muse</h3>
+
+  <div class="card">
+    <h4>Muse Spark</h4>
+    <p>Es el modelo de IA que proporciona la capacidad intelectual utilizada por Muse.</p>
+    <div class="box">
+      <span class="box-title">Analogía</span>
+      <strong>Muse Spark es el motor intelectual.</strong>
+    </div>
+
+    <h4>Muse Secure VM</h4>
+    <p>VM significa <strong>máquina virtual</strong>. No necesitas memorizar el término.</p>
+    <div class="box">
+      <span class="box-title">Analogía</span>
+      <strong>Un ordenador privado en la nube preparado para que Muse trabaje.</strong>
+    </div>
+    <p>Meta explica que Muse funciona en una máquina virtual dedicada y persistente, con su propio navegador.</p>
+
+    <h4>El navegador</h4>
+    <p>Muse puede utilizar un navegador dentro de ese entorno para realizar determinadas tareas en Internet. Por ejemplo:</p>
+    <ul>
+      <li>consultar una página;</li>
+      <li>rellenar un formulario;</li>
+      <li>gestionar una reserva;</li>
+      <li>realizar determinadas gestiones.</li>
+    </ul>
+
+    <h4>Trabajo en segundo plano</h4>
+    <p>
+      Muse puede continuar trabajando aunque cierres la aplicación. Eso es una diferencia
+      importante respecto a una conversación tradicional: puedes darle una tarea y volver
+      más tarde para comprobar el resultado.
+    </p>
+  </div>
+
+  <h2>3. Muse no es magia: necesita herramientas y permisos</h2>
+
+  <div class="card">
+    <p><strong>Objetivo:</strong> comprender por qué un agente puede hacer cosas que un chatbot normal no puede hacer.</p>
+    <p>Una IA puede saber cómo enviar un correo. Eso no significa que tenga acceso a tu correo.</p>
+    <p>Para actuar necesita <strong>una herramienta</strong> y <strong>los permisos correspondientes</strong>.</p>
+    <div class="box">
+      <span class="box-title">Analogía</span>
+      <strong>La IA sabe cómo utilizar una llave, pero tú decides qué puertas puede abrir.</strong>
+    </div>
+    <p>
+      Meta explica que el usuario decide qué aplicaciones conecta y cuánto acceso concede.
+      Por ejemplo, en el caso del correo, Meta indica que puedes elegir qué puede hacer Muse,
+      incluyendo si puede leer mensajes o también actuar en tu nombre.
+    </p>
+    <div class="box ok">
+      <span class="box-title">Regla práctica</span>
+      Al principio concede el <strong>mínimo acceso necesario</strong>.
+      No conectes cinco servicios porque puedas hacerlo. Empieza con uno, comprueba cómo funciona
+      y después decide si necesitas ampliar sus permisos.
+    </div>
+  </div>
+
+  <h2>4. Disponibilidad: importante si estás fuera de EE. UU.</h2>
+
+  <div class="card">
+    <p><strong>Objetivo:</strong> saber si realmente puedes utilizar Muse antes de perder tiempo intentando registrarte.</p>
+    <div class="box warn">
+      <span class="box-title">Estado comprobado</span>
+      La publicación oficial de lanzamiento de Meta indica que Muse se está desplegando en
+      <strong>Estados Unidos</strong> en iOS, Android y muse.ai.
+    </div>
+    <p>
+      La documentación oficial consultada <strong>no proporciona una lista mundial de países</strong>
+      ni confirma en ella la disponibilidad en España. Por tanto, a fecha de este tutorial
+      <strong>no debe darse por hecho que Muse esté oficialmente disponible en España</strong>.
+    </p>
+    <p>
+      La información periodística de lanzamiento también describió inicialmente Muse como
+      disponible para adultos y limitado geográficamente a EE. UU.
+      (ver FUENTES · fuente 7).
+    </p>
+
+    <h3>Edad</h3>
+    <p>Las fuentes periodísticas de lanzamiento describen Muse como un servicio para usuarios de <strong>18 años o más</strong>.</p>
+    <p>La publicación principal de Meta consultada no muestra en su texto una edad mínima concreta.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Dato</th><th>Estado</th><th>Respaldo</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Disponibilidad geográfica</td>
+            <td>Confirmada oficialmente para el lanzamiento en <strong>EE. UU.</strong></td>
+            <td>Publicación oficial de Meta</td>
+          </tr>
+          <tr>
+            <td>Edad mínima de 18 años</td>
+            <td>Respaldada por fuentes periodísticas, <strong>no</strong> por la publicación principal de Meta</td>
+            <td>AP, 2026</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>❌ ¿Y una VPN?</h3>
+    <p>Aquí hay que ser muy claros.</p>
+    <p>
+      El hecho de que una VPN pueda cambiar aparentemente la ubicación de una conexión
+      <strong>no significa que Meta autorice utilizarla para conseguir acceso a Muse</strong>.
+    </p>
+    <p>
+      No hemos encontrado en las fuentes oficiales consultadas una instrucción de Meta que diga:
+      «Si estás fuera de EE. UU., utiliza una VPN para registrarte».
+    </p>
+    <div class="box bad">
+      <span class="box-title">No es un procedimiento oficial</span>
+      Este tutorial <strong>no</strong> presenta ProtonVPN, TunnelBear ni ninguna otra VPN como
+      método oficial de acceso a Muse. Tampoco recomienda construir un tutorial sobre la idea
+      de «engañar» a la comprobación regional.
+    </div>
+    <p>
+      Puede haber además comprobaciones de cuenta, disponibilidad, condiciones del servicio
+      o compatibilidad que una VPN no resuelva.
+    </p>
+
+    <h3>👉 Si estás en un país no compatible</h3>
+    <ol>
+      <li>Comprueba la disponibilidad oficial.</li>
+      <li>Si no está disponible, espera a que Meta amplíe el servicio.</li>
+      <li>No confundas una aplicación o servicio de terceros que utilice el nombre «Muse» con Meta Muse.</li>
+    </ol>
+    <div class="box bad">
+      <span class="box-title">Principio del tutorial</span>
+      <strong>No inventamos un procedimiento para superar una limitación que Meta no ha autorizado superar.</strong>
+    </div>
+  </div>
+
+  <h2>5. Requisitos previos</h2>
+
+  <div class="card">
+    <h4>Obligatorio</h4>
+    <ul>
+      <li>Un dispositivo compatible.</li>
+      <li>Conexión a Internet.</li>
+      <li>Acceso al servicio Muse.</li>
+      <li>Una cuenta que pueda utilizar Muse.</li>
+      <li>WhatsApp si quieres utilizar la interfaz de WhatsApp.</li>
+      <li>Ser elegible en tu ubicación.</li>
+    </ul>
+    <p>Muse está disponible oficialmente como aplicación móvil para iPhone y Android y mediante muse.ai según la documentación de Meta.</p>
+
+    <h4>Opcional</h4>
+    <p>
+      Dependiendo de la tarea, puedes conectar servicios o aplicaciones adicionales.
+      No necesitas conectar ninguna aplicación para aprender el concepto.
+    </p>
+  </div>
+
+  <h2>6. ¿Qué significa conectar una aplicación?</h2>
+
+  <div class="card">
+    <p><strong>Objetivo:</strong> entender qué significa realmente «conectar» un servicio.</p>
+    <p>
+      Cuando conectas una aplicación a Muse, le estás proporcionando una vía autorizada
+      para trabajar con ese servicio.
+    </p>
+    <div class="box">
+      <span class="box-title">Analogía</span>
+      <strong>Es como darle a Muse una llave limitada para una determinada herramienta.</strong>
+      La llave no tiene por qué abrir todas las puertas.
+    </div>
+    <p>Meta indica que el usuario puede elegir las aplicaciones que conecta y el nivel de acceso.</p>
+
+    <h3>Ejemplo</h3>
+    <p>Supongamos que conectas tu correo. Puedes permitir que Muse:</p>
+    <ul>
+      <li>lea mensajes;</li>
+      <li>prepare respuestas;</li>
+      <li>y, si tú lo autorizas, envíe mensajes.</li>
+    </ul>
+    <p>No debes pensar: «Le di acceso al correo y ya puede hacer cualquier cosa».</p>
+    <p>Debes pensar: «Le di determinados permisos para realizar determinadas tareas».</p>
+  </div>
+
+  <h2>7. ¿Qué aplicaciones puede conectar Muse?</h2>
+
+  <div class="card">
+    <p>
+      Meta confirma de forma general la conexión de correo, calendario, Instagram y otras
+      aplicaciones y servicios. También confirma que Muse dispone de <strong>Connectors</strong>,
+      es decir, conexiones preparadas con servicios externos.
+    </p>
+    <p>
+      Sin embargo, una característica importante de este tutorial es <strong>no convertir una lista
+      de servicios técnicamente posibles en una lista de integraciones garantizadas</strong>.
+    </p>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Servicio</th><th>Qué dice la documentación</th><th>Cómo tratarlo</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Correo electrónico</strong></td>
+          <td>Meta confirma la conexión del correo</td>
+          <td>Confirmado. Pero <em>«Gmail»</em> específicamente: comprobar en la interfaz de tu cuenta.</td>
+        </tr>
+        <tr>
+          <td><strong>Calendario</strong></td>
+          <td>Meta confirma la conexión del calendario</td>
+          <td>Confirmado. Pero <em>«Google Calendar»</em> específicamente: comprobar en la interfaz.</td>
+        </tr>
+        <tr>
+          <td><strong>Google Docs</strong></td>
+          <td>Sin confirmación suficientemente específica</td>
+          <td><strong>No lo presentamos como integración garantizada.</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Spotify</strong></td>
+          <td>Sin documentación suficiente en las fuentes principales</td>
+          <td><strong>No lo usamos como ejemplo de conexión confirmada.</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box">
+    <span class="box-title">Regla</span>
+    Si en tu interfaz aparece una aplicación: puedes estudiar la conexión que ofrece tu cuenta.<br>
+    Si no aparece: <strong>no inventes un método alternativo</strong>.<br>
+    Los conectores y sus disponibilidades pueden cambiar.
+  </div>
+
+  <h2>8. Sentinel: el supervisor de Muse</h2>
+
+  <div class="card">
+    <p><strong>Objetivo:</strong> entender por qué Meta ha añadido otra capa de control.</p>
+    <p>Meta describe un componente separado llamado <strong>Sentinel</strong>.</p>
+    <div class="box">
+      <span class="box-title">Analogía</span>
+      <strong>Muse es el empleado que hace el trabajo. Sentinel es el supervisor que controla
+      determinadas acciones antes de que salgan al exterior.</strong>
+    </div>
+    <p>
+      Según Meta, Sentinel funciona separado de Muse a nivel del sistema. Meta explica que nada
+      que Muse haga llega a Internet sin que Sentinel lo apruebe y que puede pedir permiso al
+      usuario cuando sea necesario.
+    </p>
+
+    <h3>¿Qué problema intenta resolver?</h3>
+    <p>
+      Un agente puede ejecutar varios pasos seguidos. Eso es útil. Pero también aumenta el riesgo
+      de que una acción equivocada tenga consecuencias reales. Por eso existen controles adicionales.
+    </p>
+
+    <h3>Ejemplo</h3>
+    <p>Muse prepara un correo. No es lo mismo:</p>
+    <ul>
+      <li>«He preparado este borrador.»</li>
+      <li>«He enviado el correo.»</li>
+    </ul>
+    <p>
+      El segundo hecho tiene consecuencias. Meta explica que Muse pide confirmación para
+      determinadas acciones sensibles, como enviar correos electrónicos o realizar compras.
+    </p>
+  </div>
+
+  <h2>9. Aprobaciones: tú sigues teniendo la última palabra</h2>
+
+  <div class="card">
+    <p><strong>Objetivo:</strong> aprender a trabajar con un agente sin convertirlo en un piloto automático sin supervisión.</p>
+    <p>Muse puede trabajar de forma autónoma en muchos pasos. Pero Meta indica que determinadas acciones requieren autorización.</p>
+    <p>
+      Además, Muse proporciona un <strong>registro de actividad</strong> para que puedas revisar
+      lo que ha hecho y lo que tiene previsto hacer.
+    </p>
+
+    <h3>Ejemplo</h3>
+    <p>Imagina que dices:</p>
+    <blockquote>«Busca una cámara por menos de 500 € y dime cuál comprarías.»</blockquote>
+    <p>Muse puede investigar. Pero eso no significa automáticamente:</p>
+    <blockquote>«Compra la cámara.»</blockquote>
+    <p>Si se llega al punto de compra, debe existir un control de aprobación.</p>
+
+    <div class="box warn">
+      <span class="box-title">Muy importante</span>
+      No confundas <strong>autonomía</strong> con <strong>permiso ilimitado</strong>.
+      Un agente puede ser capaz de trabajar solo durante bastante tiempo y, aun así,
+      detenerse cuando necesita autorización.
+    </div>
+  </div>
+
+</section>
+
+<!-- ============================================================
+     PANEL: PROCEDIMIENTO
+     ============================================================ -->
+<section class="panel" id="p-procedimiento" role="tabpanel" aria-label="Procedimiento">
+
+  <h2>1. ¿Cómo se utiliza Muse desde WhatsApp?</h2>
+
+  <div class="card">
+    <p><strong>Objetivo:</strong> comprender qué significa realmente la integración.</p>
+    <p>
+      Meta indica expresamente que Muse está diseñado para utilizarse mediante conversación
+      y que puede hablarse con él directamente en <strong>WhatsApp</strong>.
+    </p>
+    <p>
+      Eso significa que WhatsApp puede actuar como una <strong>interfaz de conversación</strong>
+      con tu agente.
+    </p>
+  </div>
+
+  <h2>2. Importante: no confundir Muse con Meta AI</h2>
+
+  <div class="card">
+    <p>WhatsApp ya puede ofrecer funciones de Meta AI. Eso no significa que tengas Muse. Son productos diferentes.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Producto</th><th>Qué es</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Meta AI</strong></td>
+            <td>El asistente general integrado en productos de Meta.</td>
+          </tr>
+          <tr>
+            <td><strong>Muse</strong></td>
+            <td>El agente personal diseñado para ejecutar tareas y trabajar con herramientas.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="box warn">
+      <span class="box-title">No te confundas</span>
+      Ver Meta AI dentro de WhatsApp <strong>no demuestra</strong> que Muse esté disponible en tu cuenta.
+    </div>
+  </div>
+
+  <h2>3. Activación en WhatsApp</h2>
+
+  <div class="card">
+    <div class="box bad">
+      <span class="box-title">Aquí no vamos a inventar ningún código</span>
+      Meta confirma que Muse puede utilizarse directamente en WhatsApp. Sin embargo, las fuentes
+      oficiales que hemos podido verificar <strong>no proporcionan en su texto un código universal
+      de activación</strong> que podamos escribir aquí como si fuera válido para todos los usuarios.
+      Por tanto, este tutorial <strong>no incluye un supuesto código mágico</strong>.
+    </div>
+
+    <h3>👉 Haz esto</h3>
+    <ol class="steps">
+      <li>
+        <span class="step-goal">Paso 1</span>
+        <strong>Utiliza el método oficial de acceso que Meta muestre para tu cuenta.</strong><br>
+        <em>Por qué:</em> es el único camino que Meta respalda.
+      </li>
+      <li>
+        <span class="step-goal">Paso 2</span>
+        <strong>Abre la experiencia de Muse.</strong><br>
+        <em>Resultado esperado:</em> verás una interfaz propia del agente, no un chat genérico.
+      </li>
+      <li>
+        <span class="step-goal">Paso 3</span>
+        <strong>Sigue las instrucciones que aparezcan en pantalla.</strong><br>
+        <em>Por qué:</em> los pasos pueden variar según el país, el dispositivo y la versión.
+      </li>
+      <li>
+        <span class="step-goal">Paso 4</span>
+        <strong>Si la interfaz ofrece la posibilidad de utilizar Muse en WhatsApp, utiliza ese procedimiento.</strong><br>
+        <em>Por qué:</em> es la vía oficial y te evitará métodos inventados.
+      </li>
+      <li>
+        <span class="step-goal">Paso 5</span>
+        <strong>Comprueba que la conversación corresponde realmente a Muse.</strong><br>
+        <em>Cómo:</em> verifica el origen del contacto o de la conversación dentro de la app oficial.
+      </li>
+      <li>
+        <span class="step-goal">Paso 6</span>
+        <strong>No entregues credenciales a una página o contacto que no puedas identificar como parte del servicio oficial.</strong><br>
+        <em>Por qué:</em> es la estafa más habitual en cualquier lanzamiento tecnológico.
+      </li>
+    </ol>
+
+    <h3>👀 ¿Qué deberías ver?</h3>
+    <p>
+      La experiencia debería permitirte conversar con tu Muse como con un contacto.
+      Pero los nombres, botones y pantallas pueden cambiar.
+    </p>
+    <div class="box">
+      <span class="box-title">Consejo</span>
+      No memorices capturas de terceros. Las interfaces cambian y una captura antigua
+      puede llevarte a buscar un botón que ya no existe.
+    </div>
+  </div>
+
+  <h2>4. ¿Puede Muse leer todos tus WhatsApp?</h2>
+
+  <div class="card">
+    <div class="box warn">
+      <span class="box-title">No hay que confundir la integración</span>
+      Que Muse esté disponible <strong>en WhatsApp</strong> no significa automáticamente que pueda
+      leer <strong>todas</strong> tus conversaciones de WhatsApp.
+    </div>
+    <p>
+      La documentación oficial consultada confirma que WhatsApp es una vía para conversar con Muse.
+    </p>
+    <p>
+      No utilizaremos este tutorial para afirmar que Muse puede leer todos tus chats personales,
+      grupos o conversaciones con tus contactos. Eso requeriría documentación específica.
+    </p>
+    <div class="box ok">
+      <span class="box-title">Regla práctica</span>
+      <strong>«Muse está en WhatsApp» no significa «Muse tiene acceso a todo WhatsApp».</strong>
+    </div>
+  </div>
+
+  <h2>5. El ciclo completo: objetivo → trabajo → revisión → aprobación</h2>
+
+  <div class="card">
+    <p><strong>Objetivo:</strong> aprender el ciclo con una tarea de bajo riesgo.</p>
+    <p>Vamos a usar una tarea inocua: preparar un correo, pero <strong>sin enviarlo</strong>.</p>
+
+    <h3>👉 Haz esto (paso a paso)</h3>
+    <ol class="steps">
+      <li>
+        <span class="step-goal">Paso 1</span>
+        <strong>Comprueba que tienes conectado un servicio de correo compatible.</strong><br>
+        <em>Motivo:</em> sin herramienta conectada, el agente no puede trabajar sobre el correo.<br>
+        <em>Si algo sale mal:</em> si no aparece ningún servicio de correo disponible en tu interfaz,
+        salta este ejercicio y usa otro servicio que sí aparezca.
+      </li>
+      <li>
+        <span class="step-goal">Paso 2</span>
+        <strong>Escribe esta instrucción:</strong>
+        <div class="copy-wrap">
+          <pre class="url-block" id="prompt-correo">Prepara un correo para una persona ficticia llamada Ana informándole de que la reunión prevista para mañana debe trasladarse al viernes. Quiero revisar primero el texto. No envíes nada todavía.</pre>
+          <button class="copyBtn" type="button" data-copy-target="prompt-correo">Copiar</button>
+        </div>
+        <em>Motivo:</em> defines objetivo, destinatario ficticio, contenido, condición de revisión y prohibición explícita.
+      </li>
+      <li>
+        <span class="step-goal">Paso 3</span>
+        <strong>Espera el resultado y léelo.</strong><br>
+        <em>Resultado esperado:</em> Muse debería trabajar sobre la tarea y preparar el resultado
+        si las herramientas y permisos disponibles en tu cuenta permiten hacerlo.
+      </li>
+      <li>
+        <span class="step-goal">Paso 4</span>
+        <strong>No apruebes nada todavía.</strong><br>
+        <em>Motivo:</em> primero se revisa, después se aprueba.
+      </li>
+    </ol>
+    <div class="box">
+      <span class="box-title">Nota honesta</span>
+      No afirmamos que la pantalla tenga un botón concreto porque la interfaz puede cambiar.
+    </div>
+    <div class="box ok">
+      <span class="box-title">Por qué</span>
+      Acabas de enseñarle a Muse una diferencia importantísima:
+      <strong>preparar algo no es lo mismo que ejecutarlo.</strong>
+    </div>
+  </div>
+
+  <h2>6. Hacer que Muse modifique el resultado</h2>
+
+  <div class="card">
+    <h3>👉 Haz esto</h3>
+    <p>Después de revisar el borrador, puedes pedir:</p>
+    <div class="copy-wrap">
+      <pre class="url-block" id="prompt-modificar">Hazlo más breve y añade que agradeceríamos confirmación de recepción. Sigue sin enviarlo.</pre>
+      <button class="copyBtn" type="button" data-copy-target="prompt-modificar">Copiar</button>
+    </div>
+    <h3>💡 Por qué</h3>
+    <p>
+      Estás utilizando una ventaja de los agentes: <strong>no necesitas empezar de cero</strong>.
+      Puedes trabajar iterativamente.
+    </p>
+  </div>
+
+  <h2>7. Aprobar la acción</h2>
+
+  <div class="card">
+    <p>Cuando el resultado sea correcto, Muse puede llegar al punto en que necesite tu autorización para realizar una acción sensible.</p>
+    <h3>👉 Haz esto</h3>
+    <p>Lee cuidadosamente:</p>
+    <ul>
+      <li>destinatario;</li>
+      <li>contenido;</li>
+      <li>acción que pretende realizar;</li>
+      <li>cualquier permiso solicitado.</li>
+    </ul>
+    <p>Si todo es correcto, utiliza la opción de aprobación que aparezca en tu interfaz.</p>
+    <p>Si no es correcto, rechaza la acción.</p>
+    <div class="box bad">
+      <span class="box-title">Regla de oro</span>
+      <strong>No apruebes una acción simplemente porque la IA la haya propuesto.</strong><br>
+      La aprobación significa: «He revisado esto y acepto que se haga».
+    </div>
+  </div>
+
+  <h2>8. ¿Qué pasa si rechazo una acción?</h2>
+
+  <div class="card">
+    <p>Rechazar una acción no significa que el agente haya dejado de existir. Simplemente estás diciendo: «No hagas este paso».</p>
+    <p>Puedes modificar la instrucción. Por ejemplo:</p>
+    <div class="copy-wrap">
+      <pre class="url-block" id="prompt-rechazo">No lo envíes. Cambia el destinatario por la persona ficticia B y vuelve a preparar el mensaje.</pre>
+      <button class="copyBtn" type="button" data-copy-target="prompt-rechazo">Copiar</button>
+    </div>
+    <p>Esto permite trabajar con Muse de forma iterativa.</p>
+  </div>
+
+  <h2>9. Desconexión: detener una conexión</h2>
+
+  <div class="card">
+    <p><strong>Objetivo:</strong> saber cómo recuperar el control si cambias de opinión.</p>
+    <p>Meta confirma que puedes:</p>
+    <ul>
+      <li>cambiar el acceso concedido a un servicio;</li>
+      <li>desconectar un servicio;</li>
+      <li>administrar permisos.</li>
+    </ul>
+
+    <div class="box bad">
+      <span class="box-title">Sobre /disconnect</span>
+      No hemos encontrado en las fuentes oficiales consultadas una confirmación suficientemente
+      sólida de que <code>/disconnect</code> sea un comando universal y actualmente válido
+      para desconectar Muse.<br><br>
+      <strong>NO UTILICES <code>/disconnect</code> COMO INSTRUCCIÓN UNIVERSAL.</strong><br>
+      No vamos a enseñar un comando no verificado.
+    </div>
+
+    <h3>👉 Haz esto en su lugar</h3>
+    <ol class="steps">
+      <li>
+        <span class="step-goal">Paso 1</span>
+        <strong>Abre la configuración</strong> de Muse o del servicio conectado.
+      </li>
+      <li>
+        <span class="step-goal">Paso 2</span>
+        <strong>Localiza las conexiones o permisos.</strong>
+        <em>Motivo:</em> ahí es donde vive el control real.
+      </li>
+      <li>
+        <span class="step-goal">Paso 3</span>
+        <strong>Selecciona el servicio.</strong>
+      </li>
+      <li>
+        <span class="step-goal">Paso 4</span>
+        <strong>Revisa qué acceso tiene.</strong>
+        <em>Motivo:</em> no puedes decidir qué retirar si no sabes qué hay concedido.
+      </li>
+      <li>
+        <span class="step-goal">Paso 5</span>
+        <strong>Utiliza la opción oficial para cambiar o desconectar el acceso.</strong>
+      </li>
+    </ol>
+    <p>Los nombres pueden cambiar según la versión. Busca la opción, no un nombre exacto.</p>
+  </div>
+
+  <h2>10. Desconectar no es lo mismo que borrar</h2>
+
+  <div class="card">
+    <p>Esta distinción debe quedar grabada.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Acción</th><th>Qué hace realmente</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Dejar de usar Muse</strong></td><td>Simplemente dejas de utilizarlo.</td></tr>
+          <tr><td><strong>Desconectar una aplicación</strong></td><td>Impide que Muse siga utilizando esa conexión según los permisos que hayas retirado.</td></tr>
+          <tr><td><strong>Revocar permisos</strong></td><td>Retiras una autorización concreta.</td></tr>
+          <tr><td><strong>Olvidar un dato</strong></td><td>Pides a Muse que deje de conservar un determinado recuerdo.</td></tr>
+          <tr><td><strong>Eliminar datos</strong></td><td>Es una operación diferente que puede requerir un procedimiento específico.</td></tr>
+          <tr><td><strong>Eliminar la cuenta</strong></td><td>Es todavía otra operación.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="box warn">
+      <span class="box-title">Nunca supongas</span>
+      Nunca supongas que una acción equivale automáticamente a todas las demás.
+    </div>
+  </div>
+
+</section>
+
+<!-- ============================================================
+     PANEL: PRIVACIDAD
+     ============================================================ -->
+<section class="panel" id="p-privacidad" role="tabpanel" aria-label="Privacidad">
+
+  <h2>1. Privacidad: antes de conectar tu vida digital</h2>
+
+  <div class="card">
+    <p><strong>Objetivo:</strong> entender qué información puede manejar Muse y qué controles ofrece Meta.</p>
+    <p><strong>Esta es probablemente la sección más importante del tutorial.</strong></p>
+    <p>
+      Un agente personal es más útil cuanto más contexto tiene. Pero esa misma característica
+      hace que la privacidad sea mucho más importante.
+    </p>
+  </div>
+
+  <h2>2. ¿Qué puede conocer Muse?</h2>
+
+  <div class="card">
+    <p>Meta explica que Muse puede aprender de las conversaciones y de la información que el usuario decide conectar.</p>
+    <p>Además, puede trabajar con aplicaciones y servicios conectados.</p>
+    <p>Dependiendo de las conexiones y permisos que tenga tu cuenta, puede manejar información relacionada con:</p>
+    <ul>
+      <li>correo electrónico;</li>
+      <li>calendario;</li>
+      <li>aplicaciones conectadas;</li>
+      <li>archivos;</li>
+      <li>tareas;</li>
+      <li>objetivos;</li>
+      <li>preferencias;</li>
+      <li>información que Muse haya aprendido como relevante.</li>
+    </ul>
+    <p>Meta también explica que Muse mantiene memoria sobre aquello que considera importante para personalizar su comportamiento.</p>
+
+    <div class="box warn">
+      <span class="box-title">La idea fundamental</span>
+      No pienses: «Muse solamente sabe lo que le digo en este mensaje».<br>
+      Piensa: «Muse puede construir contexto sobre mí para poder ayudarme mejor».<br><br>
+      Eso es precisamente lo que hace útil a un agente personal. Y precisamente por eso
+      hay que controlar los permisos.
+    </div>
+  </div>
+
+  <h2>3. ¿Dónde se guarda esa información?</h2>
+
+  <div class="card">
+    <p>Meta explica que Muse utiliza una <strong>Muse Secure VM</strong> dedicada.</p>
+    <p>En ella se almacenan los datos y credenciales necesarios para los servicios conectados.</p>
+    <p>
+      Meta también explica que las credenciales se almacenan en un área segura separada
+      y que Muse no puede ver las contraseñas que utiliza.
+    </p>
+    <div class="box">
+      <span class="box-title">Formulación correcta</span>
+      Esto no significa que debamos prometer seguridad absoluta. Ningún sistema informático
+      serio debería describirse como «imposible de atacar».<br><br>
+      Meta ha diseñado una arquitectura específica de aislamiento, almacenamiento de credenciales,
+      supervisión y aprobación para <strong>reducir</strong> determinados riesgos.
+    </div>
+  </div>
+
+  <h2>4. ¿Muse puede ver mis contraseñas?</h2>
+
+  <div class="card">
+    <p>
+      Meta afirma que Muse <strong>no tiene visibilidad de las contraseñas ni de los métodos de pago</strong>
+      almacenados en el sistema de credenciales.
+    </p>
+    <p>También afirma que Muse no puede ver las contraseñas que el usuario introduce directamente en el navegador.</p>
+    <p>Eso es una propiedad importante de la arquitectura. Pero recuerda:</p>
+    <div class="box bad">
+      <span class="box-title">Nunca hagas esto</span>
+      <strong>Que Muse no vea una contraseña no significa que debas compartir contraseñas por el chat.</strong><br>
+      Nunca escribas una contraseña en una conversación para «ayudar» a Muse.
+    </div>
+  </div>
+
+  <h2>5. ¿Muse utiliza mis conversaciones para mejorar la IA?</h2>
+
+  <div class="card">
+    <p>Aquí hay un matiz importante.</p>
+    <p>
+      La documentación de Meta AI Research explica que determinadas conversaciones, datos de
+      inferencia y trayectorias de uso pueden utilizarse para entrenar nuevos modelos, después
+      de aplicar procesos de saneamiento destinados a eliminar información personal identificable.
+    </p>
+    <p>
+      Meta también indica que el usuario puede <strong>optar por no participar</strong> en el uso
+      de sus interacciones para entrenamiento mediante un control en la configuración de Muse.
+    </p>
+    <div class="box">
+      <span class="box-title">Aviso de precisión</span>
+      La fuente oficial consultada no proporciona una ruta de menú suficientemente detallada como
+      para garantizar que el nombre exacto de cada pantalla sea idéntico en todas las versiones.<br><br>
+      Por eso: busca en la configuración de Muse el control relacionado con el uso de tus
+      interacciones para mejorar o entrenar los modelos. <strong>El nombre puede cambiar.</strong>
+    </div>
+  </div>
+
+  <h2>6. Reto de privacidad — ¿Qué sabe Muse de mí?</h2>
+
+  <div class="card">
+    <p><strong>Objetivo:</strong> aprender a auditar tu relación con el agente.</p>
+    <div class="box bad">
+      <span class="box-title">Utiliza información ficticia</span>
+      No introduzcas datos bancarios, contraseñas, números de documentos ni información médica
+      real para hacer este ejercicio.
+    </div>
+    <h3>👉 Haz esto</h3>
+    <ol class="steps">
+      <li>
+        <span class="step-goal">Paso 1</span>
+        Cuenta a Muse algo inventado, por ejemplo:
+        <div class="copy-wrap">
+          <pre class="url-block" id="prompt-ficticio">Mi restaurante favorito es Restaurante Ejemplo y siempre prefiero reservar los viernes.</pre>
+          <button class="copyBtn" type="button" data-copy-target="prompt-ficticio">Copiar</button>
+        </div>
+      </li>
+      <li>
+        <span class="step-goal">Paso 2</span>
+        Pregúntale después:
+        <div class="copy-wrap">
+          <pre class="url-block" id="prompt-memoria">¿Qué recuerdas sobre mis preferencias relacionadas con restaurantes?</pre>
+          <button class="copyBtn" type="button" data-copy-target="prompt-memoria">Copiar</button>
+        </div>
+      </li>
+    </ol>
+    <h3>👀 Qué deberías ver</h3>
+    <p>
+      La respuesta dependerá de lo que Muse haya conservado como información relevante
+      y de la versión del producto.
+    </p>
+    <p>
+      El objetivo <strong>no</strong> es conseguir una respuesta concreta.
+      El objetivo es <strong>comprobar cómo funciona la memoria</strong>.
+    </p>
+  </div>
+
+  <h2>7. Pedir a Muse que olvide un dato</h2>
+
+  <div class="card">
+    <p>Meta afirma que el usuario puede decirle a Muse que <strong>olvide cosas concretas que ha aprendido</strong>.</p>
+    <p>Esto confirma el concepto de control conversacional sobre determinados recuerdos.</p>
+    <h3>👉 Ejemplo</h3>
+    <div class="copy-wrap">
+      <pre class="url-block" id="prompt-olvidar">Olvida que mi restaurante favorito es Restaurante Ejemplo.</pre>
+      <button class="copyBtn" type="button" data-copy-target="prompt-olvidar">Copiar</button>
+    </div>
+    <div class="box warn">
+      <span class="box-title">Importante</span>
+      No presentamos una sintaxis especial como <code>Muse, olvida [dato]</code> como si fuese un
+      comando técnico obligatorio. Meta confirma la capacidad de pedir a Muse que olvide
+      información específica, pero no necesitamos inventar una gramática exacta.<br><br>
+      Tampoco debemos afirmar que «olvidar» significa necesariamente borrar todas las copias de
+      esa información de todos los sistemas, historiales o registros. Son conceptos diferentes.
+    </div>
+  </div>
+
+  <h2>8. Memoria, historial, permisos y datos NO son lo mismo</h2>
+
+  <div class="card">
+    <p>Esta distinción es fundamental.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Concepto</th><th>Qué es</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Memoria</strong></td><td>Información que Muse conserva para personalizar su comportamiento.</td></tr>
+          <tr><td><strong>Historial</strong></td><td>Conversaciones o registros de interacción.</td></tr>
+          <tr><td><strong>Permisos</strong></td><td>Autorizaciones para acceder o actuar sobre un servicio.</td></tr>
+          <tr><td><strong>Datos</strong></td><td>Información almacenada en los sistemas utilizados por el servicio.</td></tr>
+          <tr><td><strong>Conexiones</strong></td><td>Los vínculos entre Muse y aplicaciones externas.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Por qué importa</h3>
+    <p>Puedes:</p>
+    <ul>
+      <li>pedir que olvide un dato;</li>
+      <li>desconectar una aplicación;</li>
+      <li>retirar un permiso;</li>
+      <li>eliminar información;</li>
+    </ul>
+    <p>y <strong>no necesariamente estás haciendo exactamente la misma operación</strong>.</p>
+    <div class="box bad">
+      <span class="box-title">Nunca digas esto</span>
+      «Desconectar una aplicación borra automáticamente todos tus datos.»<br>
+      Eso requiere confirmación específica de la documentación correspondiente.
+    </div>
+  </div>
+
+  <h2>9. Muse y la publicidad</h2>
+
+  <div class="card">
+    <p>
+      Meta afirma que las conversaciones de una persona y los datos de su VM
+      <strong>no se comparten con los sistemas publicitarios de Meta</strong>.
+    </p>
+    <p>Pero la documentación de Meta AI Research introduce un matiz importante:</p>
+    <p>
+      Cuando Muse navega por Internet, esa actividad <strong>puede aparecer para un sitio web</strong>
+      como actividad realizada por el usuario. Por ejemplo, si Muse visita una tienda o una web
+      de reservas, ese sitio puede utilizar esa visita según sus propias políticas.
+    </p>
+    <div class="box warn">
+      <span class="box-title">Conclusión</span>
+      No compartir directamente las conversaciones con los sistemas publicitarios de Meta
+      <strong>no significa</strong> que ninguna actividad realizada por Muse pueda tener
+      consecuencias indirectas en la publicidad que ves.
+    </div>
+  </div>
+
+  <h2>10. Seguridad: qué protege Sentinel y qué no debes asumir</h2>
+
+  <div class="card">
+    <p><strong>Objetivo:</strong> evitar una falsa sensación de seguridad.</p>
+    <p>Sentinel está diseñado para supervisar las acciones de Muse antes de que determinadas acciones alcancen Internet.</p>
+    <p>Además:</p>
+    <ul>
+      <li>Muse utiliza una máquina virtual dedicada;</li>
+      <li>existe almacenamiento separado para credenciales;</li>
+      <li>existen controles de permisos;</li>
+      <li>existen aprobaciones para acciones sensibles;</li>
+      <li>existe un registro de actividad.</li>
+    </ul>
+    <p>Todo esto son capas de protección.</p>
+    <div class="box bad">
+      <span class="box-title">No digas esto</span>
+      «Mis datos están completamente a salvo.»
+    </div>
+    <div class="box ok">
+      <span class="box-title">Formulación correcta</span>
+      «Meta ha diseñado Muse con varias capas de aislamiento, control y autorización
+      para reducir riesgos y mantener al usuario en control.»
+    </div>
+  </div>
+
+</section>
+
+<!-- ============================================================
+     PANEL: PRÁCTICA
+     ============================================================ -->
+<section class="panel" id="p-practica" role="tabpanel" aria-label="Práctica">
+
+  <h2>Reto 1 — Aprende a darle trabajo a Muse</h2>
+
+  <div class="card">
+    <p><strong>Objetivo:</strong> aprender a formular una tarea como objetivo, no como una pregunta.</p>
+    <h3>🧪 El reto</h3>
+    <p>En lugar de preguntar:</p>
+    <div class="copy-wrap">
+      <pre class="url-block" id="prompt-reto1-mal">¿Cómo puedo organizar mi correo?</pre>
+      <button class="copyBtn" type="button" data-copy-target="prompt-reto1-mal">Copiar</button>
+    </div>
+    <p>Prueba a formular un objetivo:</p>
+    <div class="copy-wrap">
+      <pre class="url-block" id="prompt-reto1-bien">Quiero organizar mi correo. Primero analiza qué tipos de mensajes recibo con más frecuencia y propón una forma de clasificarlos. No borres ni envíes nada.</pre>
+      <button class="copyBtn" type="button" data-copy-target="prompt-reto1-bien">Copiar</button>
+    </div>
+    <h3>💡 Por qué</h3>
+    <p>Esta segunda petición contiene:</p>
+    <ol>
+      <li>un objetivo;</li>
+      <li>una tarea de análisis;</li>
+      <li>una restricción;</li>
+      <li>una prohibición explícita.</li>
+    </ol>
+    <p>Es una forma mucho más segura de empezar.</p>
+  </div>
+
+  <h2>Reto 2 — Formular una buena tarea</h2>
+
+  <div class="card">
+    <p>Utiliza esta estructura:</p>
+    <div class="box">
+      <span class="box-title">Fórmula</span>
+      <strong>OBJETIVO + CONTEXTO + LÍMITES + RESULTADO ESPERADO</strong>
+    </div>
+    <h3>Ejemplo correcto</h3>
+    <div class="copy-wrap">
+      <pre class="url-block" id="prompt-reto2">Quiero encontrar tres opciones de alojamiento para un viaje. El presupuesto máximo es 100 € por noche. Compara ubicación, precio y condiciones. No reserves nada. Primero quiero revisar las opciones.</pre>
+      <button class="copyBtn" type="button" data-copy-target="prompt-reto2">Copiar</button>
+    </div>
+    <h3>Ejemplo mejorable</h3>
+    <div class="copy-wrap">
+      <pre class="url-block" id="prompt-reto2-mal">Busca un hotel.</pre>
+      <button class="copyBtn" type="button" data-copy-target="prompt-reto2-mal">Copiar</button>
+    </div>
+    <p>El primero es mejor porque Muse recibe más información para decidir cómo trabajar.</p>
+  </div>
+
+  <h2>Reto 3 — Preparar un correo sin enviarlo</h2>
+
+  <div class="card">
+    <p><strong>Objetivo:</strong> practicar el ciclo completo <em>objetivo → trabajo → revisión → aprobación</em>.</p>
+    <div class="copy-wrap">
+      <pre class="url-block" id="prompt-reto3">Prepara un correo para una persona ficticia llamada Ana informándole de que la reunión prevista para mañana debe trasladarse al viernes. Quiero revisar primero el texto. No envíes nada todavía.</pre>
+      <button class="copyBtn" type="button" data-copy-target="prompt-reto3">Copiar</button>
+    </div>
+    <p><strong>Qué observar:</strong> ¿Muse ha preparado el texto sin enviarlo? ¿Te ha pedido permiso antes de ejecutar?</p>
+  </div>
+
+  <h2>Reto 4 — Modificar y aprobar</h2>
+
+  <div class="card">
+    <p><strong>Fase A — modificar:</strong></p>
+    <div class="copy-wrap">
+      <pre class="url-block" id="prompt-reto4a">Hazlo más breve y añade que agradeceríamos confirmación de recepción. Sigue sin enviarlo.</pre>
+      <button class="copyBtn" type="button" data-copy-target="prompt-reto4a">Copiar</button>
+    </div>
+    <p><strong>Fase B — aprobar (solo tras revisar):</strong> lee destinatario, contenido, acción y permisos solicitados. Si todo es correcto, aprueba. Si no, rechaza.</p>
+    <div class="box bad">
+      <span class="box-title">Regla de oro</span>
+      <strong>No apruebes una acción simplemente porque la IA la haya propuesto.</strong>
+    </div>
+  </div>
+
+  <h2>Reto 5 — Auditar la memoria</h2>
+
+  <div class="card">
+    <p><strong>Objetivo:</strong> comprobar qué conserva el agente y cómo se le pide que olvide.</p>
+    <ol class="steps">
+      <li>
+        <span class="step-goal">Paso 1</span>
+        Cuenta algo ficticio:
+        <div class="copy-wrap">
+          <pre class="url-block" id="prompt-reto5a">Mi restaurante favorito es Restaurante Ejemplo y siempre prefiero reservar los viernes.</pre>
+          <button class="copyBtn" type="button" data-copy-target="prompt-reto5a">Copiar</button>
+        </div>
+      </li>
+      <li>
+        <span class="step-goal">Paso 2</span>
+        Pregunta qué recuerda:
+        <div class="copy-wrap">
+          <pre class="url-block" id="prompt-reto5b">¿Qué recuerdas sobre mis preferencias relacionadas con restaurantes?</pre>
+          <button class="copyBtn" type="button" data-copy-target="prompt-reto5b">Copiar</button>
+        </div>
+      </li>
+      <li>
+        <span class="step-goal">Paso 3</span>
+        Pídele que lo olvide:
+        <div class="copy-wrap">
+          <pre class="url-block" id="prompt-reto5c">Olvida que mi restaurante favorito es Restaurante Ejemplo.</pre>
+          <button class="copyBtn" type="button" data-copy-target="prompt-reto5c">Copiar</button>
+        </div>
+      </li>
+      <li>
+        <span class="step-goal">Paso 4</span>
+        Vuelve a preguntar qué recuerda y compara.
+        <em>Motivo:</em> así ves el efecto real del control conversacional sobre la memoria.
+      </li>
+    </ol>
+    <div class="box warn">
+      <span class="box-title">Recuerda</span>
+      «Olvidar» un dato <strong>no</strong> equivale automáticamente a borrar todas las copias de esa
+      información de todos los sistemas, historiales o registros.
+    </div>
+  </div>
+
+  <h2>Reto final — El método seguro de trabajar con Muse</h2>
+
+  <div class="card">
+    <p><strong>Objetivo:</strong> crear tu propio método de trabajo.</p>
+    <p>Utiliza siempre esta secuencia:</p>
+    <ol class="steps">
+      <li><span class="step-goal">1</span><strong>DEFINE</strong> — ¿Qué quiero conseguir?</li>
+      <li><span class="step-goal">2</span><strong>LIMITA</strong> — ¿Qué NO quiero que haga?</li>
+      <li><span class="step-goal">3</span><strong>CONECTA</strong> — ¿Qué herramienta necesita realmente?</li>
+      <li><span class="step-goal">4</span><strong>DELEGA</strong> — Deja que Muse haga el trabajo que le corresponde.</li>
+      <li><span class="step-goal">5</span><strong>REVISA</strong> — Comprueba qué pretende hacer.</li>
+      <li><span class="step-goal">6</span><strong>APRUEBA</strong> — Autoriza solamente las acciones que hayas revisado.</li>
+      <li><span class="step-goal">7</span><strong>AUDITA</strong> — Comprueba qué ha hecho.</li>
+      <li><span class="step-goal">8</span><strong>RETIRA</strong> — Si ya no necesitas una conexión, reduce permisos o desconéctala.</li>
+    </ol>
+  </div>
+
+  <h2>Un ejemplo completo</h2>
+
+  <div class="card">
+    <p>Imagina que quieres preparar una reunión.</p>
+    <p>En lugar de:</p>
+    <div class="copy-wrap">
+      <pre class="url-block" id="prompt-ej-mal">Ayúdame con una reunión.</pre>
+      <button class="copyBtn" type="button" data-copy-target="prompt-ej-mal">Copiar</button>
+    </div>
+    <p>Puedes decir:</p>
+    <div class="copy-wrap">
+      <pre class="url-block" id="prompt-ej-bien">Quiero organizar una reunión con tres personas la próxima semana. Comprueba mi calendario y busca dos huecos compatibles. Después prepara una propuesta de horario. No envíes invitaciones ni modifiques el calendario hasta que yo lo apruebe.</pre>
+      <button class="copyBtn" type="button" data-copy-target="prompt-ej-bien">Copiar</button>
+    </div>
+    <p>Observa lo que contiene:</p>
+    <ul>
+      <li><strong>OBJETIVO:</strong> organizar una reunión.</li>
+      <li><strong>HERRAMIENTA:</strong> calendario.</li>
+      <li><strong>TAREA:</strong> encontrar huecos.</li>
+      <li><strong>RESULTADO:</strong> dos propuestas.</li>
+      <li><strong>LÍMITE:</strong> no modificar nada.</li>
+      <li><strong>APROBACIÓN:</strong> el usuario decide al final.</li>
+    </ul>
+    <p>Ese es el tipo de instrucción que tiene sentido con un agente.</p>
+  </div>
+
+  <h2>Plantilla para escribir mejores instrucciones</h2>
+
+  <div class="card">
+    <p>Una buena instrucción no necesita ser técnica. Puedes utilizar esta plantilla:</p>
+    <div class="copy-wrap">
+      <pre class="url-block" id="prompt-plantilla">Quiero conseguir: [objetivo].
+
+Contexto: [información necesaria].
+
+Haz: [acciones].
+
+No hagas: [límites].
+
+Antes de: [acción sensible], pregúntame.
+
+Resultado que quiero: [resultado].</pre>
+      <button class="copyBtn" type="button" data-copy-target="prompt-plantilla">Copiar</button>
+    </div>
+
+    <h3>Ejemplo rellenado</h3>
+    <div class="copy-wrap">
+      <pre class="url-block" id="prompt-plantilla-ej">Quiero conseguir una lista de tres proveedores de limpieza.
+
+Contexto: necesito servicio para una oficina pequeña.
+
+Haz: busca tres opciones y compara precio, ubicación y opiniones.
+
+No hagas: no contactes con ninguna empresa.
+
+Antes de: enviar cualquier mensaje o contratar, pregúntame.
+
+Resultado que quiero: una tabla sencilla con las tres opciones.</pre>
+      <button class="copyBtn" type="button" data-copy-target="prompt-plantilla-ej">Copiar</button>
+    </div>
+
+    <p>Esto es mucho más preciso que:</p>
+    <div class="copy-wrap">
+      <pre class="url-block" id="prompt-plantilla-mal">Busca empresas de limpieza.</pre>
+      <button class="copyBtn" type="button" data-copy-target="prompt-plantilla-mal">Copiar</button>
+    </div>
+  </div>
+
+  <h2>Lo que NO debes hacer al principio</h2>
+
+  <div class="card">
+    <p>No empieces entregando a un agente personal acceso a toda tu vida digital.</p>
+    <p>No empieces con:</p>
+    <ul>
+      <li>cuentas bancarias;</li>
+      <li>documentos extremadamente sensibles;</li>
+      <li>contraseñas;</li>
+      <li>información médica;</li>
+      <li>compras importantes;</li>
+      <li>transferencias;</li>
+      <li>mensajes personales delicados.</li>
+    </ul>
+    <p>Empieza con tareas reversibles y de bajo riesgo. Por ejemplo:</p>
+    <ul>
+      <li>investigación;</li>
+      <li>comparación de productos;</li>
+      <li>preparación de un borrador;</li>
+      <li>organización de información;</li>
+      <li>búsqueda de horarios;</li>
+      <li>planificación.</li>
+    </ul>
+    <p>Después aumenta progresivamente la autonomía.</p>
+  </div>
+
+</section>
+
+<!-- ============================================================
+     PANEL: ERRORES
+     ============================================================ -->
+<section class="panel" id="p-errores" role="tabpanel" aria-label="Errores frecuentes">
+
+  <h2>Errores frecuentes y cómo corregirlos</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Error</th><th>Por qué está mal</th><th>Cómo corregirlo</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Tratar a Muse como un chatbot</td>
+          <td>Le pides respuestas cuando puedes pedirle trabajo.</td>
+          <td>Formula objetivos con límites y resultado esperado.</td>
+        </tr>
+        <tr>
+          <td>Dar acceso a todo «por comodidad»</td>
+          <td>Amplía el daño potencial de un error del agente.</td>
+          <td>Concede el mínimo acceso necesario y amplía después.</td>
+        </tr>
+        <tr>
+          <td>Aprobar acciones sin leerlas</td>
+          <td>La aprobación es tu última barrera de control.</td>
+          <td>Revisa destinatario, contenido, acción y permisos antes de aprobar.</td>
+        </tr>
+        <tr>
+          <td>Escribir contraseñas en el chat</td>
+          <td>Nunca es necesario y crea un riesgo real.</td>
+          <td>Nunca escribas una contraseña en una conversación.</td>
+        </tr>
+        <tr>
+          <td>Creer que «olvidar» = «borrar todo»</td>
+          <td>Son operaciones distintas.</td>
+          <td>Trátalas como conceptos separados: memoria, historial, permisos, datos, conexiones.</td>
+        </tr>
+        <tr>
+          <td>Usar <code>/disconnect</code> como comando universal</td>
+          <td>No hay confirmación oficial sólida de que sea un comando válido.</td>
+          <td>Usa la configuración oficial de Muse o del servicio conectado.</td>
+        </tr>
+        <tr>
+          <td>Usar una VPN como método oficial de acceso</td>
+          <td>Meta no lo ha autorizado.</td>
+          <td>Comprueba la disponibilidad oficial y espera a que Meta amplíe el servicio.</td>
+        </tr>
+        <tr>
+          <td>Asumir que Muse lee todos tus chats</td>
+          <td>La documentación no lo respalda.</td>
+          <td>«Muse está en WhatsApp» no significa «Muse tiene acceso a todo WhatsApp».</td>
+        </tr>
+        <tr>
+          <td>Confundir Meta AI con Muse</td>
+          <td>Son productos diferentes.</td>
+          <td>Verifica qué producto tienes realmente disponible en tu cuenta.</td>
+        </tr>
+        <tr>
+          <td>Confundir autonomía con permiso ilimitado</td>
+          <td>Puede trabajar solo y, aun así, detenerse a pedir autorización.</td>
+          <td>Piensa en autonomía <em>con</em> puntos de control.</td>
+        </tr>
+        <tr>
+          <td>Buscar «el botón exacto» de una captura ajena</td>
+          <td>Las interfaces cambian.</td>
+          <td>Busca la función, no el nombre exacto.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Lo que Meta confirma y lo que este tutorial NO afirma</h2>
+
+  <div class="card">
+    <h3>✅ Confirmado por Meta</h3>
+    <ul>
+      <li>Muse es un agente personal de IA.</li>
+      <li>Utiliza Muse Spark.</li>
+      <li>Funciona sobre Muse Secure VM.</li>
+      <li>Tiene un navegador propio dentro de ese entorno.</li>
+      <li>Puede realizar tareas de varios pasos.</li>
+      <li>Puede trabajar en segundo plano.</li>
+      <li>Puede utilizarse directamente mediante WhatsApp.</li>
+      <li>Puede conectarse con aplicaciones y servicios.</li>
+      <li>Puede solicitar aprobación para acciones sensibles.</li>
+      <li>Existe un registro de actividad.</li>
+      <li>Existe Sentinel como capa de supervisión.</li>
+      <li>El usuario puede administrar permisos.</li>
+      <li>El usuario puede desconectar servicios.</li>
+      <li>Muse puede recordar información relevante.</li>
+      <li>El usuario puede pedirle que olvide información específica.</li>
+      <li>Meta ofrece un control para no participar en el uso de interacciones para entrenamiento.</li>
+      <li>Las conversaciones y datos de la VM no se comparten con los sistemas publicitarios de Meta, según Meta.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>❌ No confirmado suficientemente para enseñarlo como hecho</h3>
+    <ul>
+      <li>Un comando universal <code>/disconnect</code> para Muse en WhatsApp.</li>
+      <li>Un código universal de activación para WhatsApp.</li>
+      <li>Una VPN como método oficial para acceder desde un país no compatible.</li>
+      <li>Que Google Docs esté disponible para todas las cuentas.</li>
+      <li>Que Spotify esté disponible para todas las cuentas.</li>
+      <li>Que Muse pueda leer todos los chats personales de WhatsApp.</li>
+      <li>Que Muse pueda acceder automáticamente a todos tus grupos de WhatsApp.</li>
+      <li>Que «olvidar» un dato elimine todas las copias de esa información de todos los sistemas.</li>
+    </ul>
+    <div class="box ok">
+      <span class="box-title">Por qué esta separación es deliberada</span>
+      <strong>Un tutorial fiable debe decir también lo que no sabe.</strong>
+    </div>
+  </div>
+
+  <h2>Preguntas frecuentes sobre errores</h2>
+
+  <details>
+    <summary>¿Muse puede hacer compras sin avisarme?</summary>
+    <div class="details-body">
+      Meta explica que Muse pide confirmación para determinadas acciones sensibles, como enviar
+      correos electrónicos o realizar compras. Además existe Sentinel como capa de supervisión.
+      Aun así, la regla práctica es: <strong>revisa y aprueba tú mismo</strong>. No delegues
+      la supervisión a la propia herramienta.
+    </div>
+  </details>
+
+  <details>
+    <summary>¿Si desconecto una aplicación, se borran mis datos de ese servicio?</summary>
+    <div class="details-body">
+      No debes asumirlo. Desconectar, revocar permisos, olvidar un dato, eliminar datos y eliminar
+      la cuenta son operaciones distintas. Cada una requiere su propio procedimiento y su propia
+      confirmación documental.
+    </div>
+  </details>
+
+  <details>
+    <summary>¿Puedo fiarme de los vídeos y capturas que veo por Internet?</summary>
+    <div class="details-body">
+      No como fuente de procedimiento. Las interfaces cambian y las capturas se quedan obsoletas.
+      Usa las fuentes oficiales y la propia interfaz de tu cuenta.
+    </div>
+  </details>
+
+  <details>
+    <summary>¿Es peligroso conectar el correo?</summary>
+    <div class="details-body">
+      No es «peligroso» por sí mismo: es una decisión de permisos. Puedes conceder lectura sin
+      conceder envío, o al revés. Empieza con el permiso más limitado que te permita hacer la tarea
+      y amplía solo si lo necesitas.
+    </div>
+  </details>
+
+</section>
+
+<!-- ============================================================
+     PANEL: RESUMEN
+     ============================================================ -->
+<section class="panel" id="p-resumen" role="tabpanel" aria-label="Resumen">
+
+  <h2>Qué cambia realmente con Muse</h2>
+
+  <div class="card">
+    <p>El cambio importante no es que una IA escriba mejores textos. Es otro.</p>
+    <p>Hasta ahora muchas herramientas de IA funcionaban así:</p>
+    <blockquote>«Dime qué quieres que haga paso a paso.»</blockquote>
+    <p>El modelo de agente intenta cambiarlo por:</p>
+    <blockquote>«Dime qué quieres conseguir y yo me encargo de parte del trabajo.»</blockquote>
+    <p>Eso desplaza el problema. Ya no basta con aprender a escribir prompts. Hay que aprender a:</p>
+    <ul>
+      <li>definir objetivos;</li>
+      <li>establecer límites;</li>
+      <li>conceder permisos;</li>
+      <li>revisar acciones;</li>
+      <li>controlar datos;</li>
+      <li>supervisar resultados.</li>
+    </ul>
+    <div class="box ok">
+      <span class="box-title">La competencia clave</span>
+      <strong>Saber delegar a una máquina sin dejar de controlar la delegación.</strong>
+    </div>
+  </div>
+
+  <h2>La idea que debes llevarte</h2>
+
+  <div class="card">
+    <p>Si recuerdas solamente una cosa de este tutorial, que sea esta:</p>
+    <div class="box">
+      <span class="box-title">En una frase</span>
+      <strong>Un chatbot te ayuda a pensar. Un agente puede ayudarte a actuar.</strong><br>
+      Y precisamente porque puede actuar: los permisos, la privacidad y la supervisión
+      dejan de ser detalles secundarios.
+    </div>
+    <p>Con Muse puedes decir: «Hazlo.»</p>
+    <p>Pero un usuario inteligente aprende a decir:</p>
+    <blockquote>
+      «Hazlo, pero con estos límites. Pregúntame antes de esta acción.
+      Y después enséñame qué has hecho.»
+    </blockquote>
+    <p>Esa es la diferencia entre <strong>utilizar un agente</strong> y simplemente
+      <strong>dejar que un agente utilice tus herramientas</strong>.</p>
+  </div>
+
+  <h2>Glosario</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Término</th><th>Qué significa</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Agente de IA</strong></td><td>IA que no solo responde: planifica pasos, usa herramientas y ejecuta tareas con tus permisos.</td></tr>
+        <tr><td><strong>Chatbot</strong></td><td>IA que responde preguntas. Tú sigues haciendo el trabajo.</td></tr>
+        <tr><td><strong>Asistente de IA</strong></td><td>IA conversacional más capaz que un chatbot, pero que depende bastante de tus instrucciones.</td></tr>
+        <tr><td><strong>Muse</strong></td><td>Agente personal de IA de Meta.</td></tr>
+        <tr><td><strong>Muse Spark</strong></td><td>El modelo de IA que aporta la capacidad intelectual. «El motor».</td></tr>
+        <tr><td><strong>Muse Secure VM</strong></td><td>Máquina virtual dedicada y persistente donde trabaja Muse, con su propio navegador.</td></tr>
+        <tr><td><strong>Sentinel</strong></td><td>Capa de supervisión separada que controla determinadas acciones antes de que salgan a Internet.</td></tr>
+        <tr><td><strong>Connectors</strong></td><td>Conexiones preparadas con servicios externos.</td></tr>
+        <tr><td><strong>Conectar una aplicación</strong></td><td>Dar a Muse una vía autorizada, con un nivel de acceso determinado, para trabajar con ese servicio.</td></tr>
+        <tr><td><strong>Permiso</strong></td><td>Autorización concreta para acceder o actuar sobre un servicio.</td></tr>
+        <tr><td><strong>Aprobación</strong></td><td>Tu autorización explícita antes de una acción sensible.</td></tr>
+        <tr><td><strong>Registro de actividad</strong></td><td>Historial donde puedes revisar lo que el agente ha hecho y lo que tiene previsto hacer.</td></tr>
+        <tr><td><strong>Memoria</strong></td><td>Información que Muse conserva para personalizar su comportamiento.</td></tr>
+        <tr><td><strong>Trabajo en segundo plano</strong></td><td>Muse sigue trabajando aunque cierres la aplicación.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Preguntas frecuentes</h2>
+
+  <details>
+    <summary>¿Muse es lo mismo que Meta AI?</summary>
+    <div class="details-body">
+      No. <strong>Meta AI</strong> es el asistente general integrado en productos de Meta.
+      <strong>Muse</strong> es el agente personal diseñado para ejecutar tareas y trabajar con
+      herramientas. Ver Meta AI dentro de WhatsApp no demuestra que tengas Muse.
+    </div>
+  </details>
+
+  <details>
+    <summary>¿Puedo usar Muse si estoy fuera de EE. UU.?</summary>
+    <div class="details-body">
+      La publicación oficial de lanzamiento indica un despliegue en Estados Unidos.
+      La documentación oficial consultada no confirma disponibilidad en España.
+      Comprueba la disponibilidad oficial antes de intentar nada. No se presenta una VPN
+      como método oficial.
+    </div>
+  </details>
+
+  <details>
+    <summary>¿Muse puede leer todos mis chats de WhatsApp?</summary>
+    <div class="details-body">
+      No se afirma eso en este tutorial. La documentación oficial consultada confirma que WhatsApp
+      es una vía para conversar con Muse; no confirma acceso a todos tus chats personales o grupos.
+    </div>
+  </details>
+
+  <details>
+    <summary>¿Muse ve mis contraseñas?</summary>
+    <div class="details-body">
+      Meta afirma que Muse no tiene visibilidad de las contraseñas ni de los métodos de pago
+      almacenados en el sistema de credenciales, ni de las contraseñas que introduzcas
+      directamente en el navegador. Aun así, <strong>nunca escribas una contraseña en un chat</strong>.
+    </div>
+  </details>
+
+  <details>
+    <summary>¿Puedo pedirle que olvide algo?</summary>
+    <div class="details-body">
+      Meta confirma que puedes pedirle que olvide información específica que ha aprendido.
+      Lo que <strong>no</strong> debes asumir es que eso borre todas las copias de esa información
+      de todos los sistemas.
+    </div>
+  </details>
+
+  <details>
+    <summary>¿Existe un comando <code>/disconnect</code>?</summary>
+    <div class="details-body">
+      No hemos encontrado confirmación oficial suficientemente sólida. Este tutorial no lo enseña
+      como comando universal. Usa la configuración oficial de Muse o del servicio conectado.
+    </div>
+  </details>
+
+  <details>
+    <summary>¿Por dónde empiezo si quiero usar Muse con seguridad?</summary>
+    <div class="details-body">
+      Con tareas reversibles y de bajo riesgo: investigación, comparación de productos,
+      preparación de borradores, organización de información, búsqueda de horarios y planificación.
+      Aumenta la autonomía progresivamente.
+    </div>
+  </details>
+
+  <h2>Checklist final de aprendizaje</h2>
+
+  <div class="card">
+    <p class="lead">Marca cada casilla cuando puedas decir «sí». Tu progreso se guarda en este navegador.</p>
+    <div class="checklist-tools">
+      <span class="checklist-count" id="checkCount">0 / 20 marcados</span>
+      <button class="btn" type="button" id="checkReset">Reiniciar checklist</button>
+    </div>
+    <div class="checklist" id="finalChecklist">
+      <label><input type="checkbox" data-key="c01"><span>Sé explicar qué es un agente de IA.</span></label>
+      <label><input type="checkbox" data-key="c02"><span>Sé diferenciar un chatbot de un agente.</span></label>
+      <label><input type="checkbox" data-key="c03"><span>Entiendo qué es Muse Spark.</span></label>
+      <label><input type="checkbox" data-key="c04"><span>Entiendo qué significa Muse Secure VM.</span></label>
+      <label><input type="checkbox" data-key="c05"><span>Sé qué papel desempeña Sentinel.</span></label>
+      <label><input type="checkbox" data-key="c06"><span>Entiendo qué significa conectar una aplicación.</span></label>
+      <label><input type="checkbox" data-key="c07"><span>Sé que los permisos son importantes.</span></label>
+      <label><input type="checkbox" data-key="c08"><span>Sé que Muse puede trabajar en segundo plano.</span></label>
+      <label><input type="checkbox" data-key="c09"><span>Sé que determinadas acciones requieren aprobación.</span></label>
+      <label><input type="checkbox" data-key="c10"><span>Sé que existe un registro de actividad.</span></label>
+      <label><input type="checkbox" data-key="c11"><span>Sé que Muse puede recordar información.</span></label>
+      <label><input type="checkbox" data-key="c12"><span>Sé que puedo pedirle que olvide información concreta.</span></label>
+      <label><input type="checkbox" data-key="c13"><span>Sé que olvidar un dato no debe confundirse automáticamente con borrar todo el historial.</span></label>
+      <label><input type="checkbox" data-key="c14"><span>Sé que puedo cambiar o desconectar conexiones.</span></label>
+      <label><input type="checkbox" data-key="c15"><span>Sé que <code>/disconnect</code> no debe utilizarse como comando universal sin confirmación oficial.</span></label>
+      <label><input type="checkbox" data-key="c16"><span>Sé que no debo utilizar una VPN como supuesto método oficial para saltarme una restricción geográfica.</span></label>
+      <label><input type="checkbox" data-key="c17"><span>Sé que WhatsApp puede ser una interfaz para conversar con Muse.</span></label>
+      <label><input type="checkbox" data-key="c18"><span>Sé que estar en WhatsApp no significa que Muse tenga acceso automático a todas mis conversaciones.</span></label>
+      <label><input type="checkbox" data-key="c19"><span>Sé que debo empezar con tareas de bajo riesgo.</span></label>
+      <label><input type="checkbox" data-key="c20"><span>Sé cómo escribir un objetivo con límites.</span></label>
+    </div>
+  </div>
+
+  <h2>Nota final de veracidad</h2>
+
+  <div class="card">
+    <p>Este tutorial distingue deliberadamente entre:</p>
+    <ul>
+      <li><strong>lo que Meta afirma</strong> que Muse puede hacer;</li>
+      <li><strong>lo que una fuente independiente informa</strong>;</li>
+      <li>y <strong>lo que no está suficientemente documentado</strong> para convertirlo en una instrucción práctica.</li>
+    </ul>
+    <p>Las interfaces de Muse, WhatsApp y sus conectores pueden cambiar rápidamente.</p>
+    <p>Por ello, cuando una pantalla concreta no está documentada de forma fiable, este tutorial <strong>no inventa el botón</strong>.</p>
+    <div class="box ok">
+      <span class="box-title">Regla 1</span>
+      <strong>Si no está verificado, no se presenta como hecho.</strong>
+    </div>
+    <div class="box bad">
+      <span class="box-title">Regla 2</span>
+      <strong>Que una tecnología pueda hacer algo no significa que debamos darle permiso para hacerlo.</strong>
+    </div>
+  </div>
+
+</section>
+
+<!-- ============================================================
+     PANEL: FUENTES
+     ============================================================ -->
+<section class="panel" id="p-fuentes" role="tabpanel" aria-label="Fuentes">
+
+  <h2>Fuentes consultadas</h2>
+  <p class="lead">
+    Cada enlace está en un bloque de texto plano con su botón <strong>Copiar</strong>.
+    Fecha de consulta de todas las fuentes: 7 de octubre de 2026.
+  </p>
+
+  <h3>Fuentes oficiales</h3>
+
+  <div class="card">
+    <h4>1. Meta — Introducing Muse: The World's First Personal AI Agent Built for Everyone</h4>
+    <div class="copy-wrap">
+      <pre class="url-block" id="url-01">https://about.fb.com/news/2026/09/introducing-muse-personal-ai-agent/</pre>
+      <button class="copyBtn" type="button" data-copy-target="url-01">Copiar</button>
+    </div>
+    <p><strong>Información utilizada:</strong> definición de Muse; Muse Spark; Muse Secure VM; navegador;
+      trabajo en segundo plano; tareas; conectores; compras; aprobaciones; Sentinel; almacenamiento
+      de credenciales; memoria; desconexión; entrenamiento; privacidad; disponibilidad inicial.</p>
+    <p><strong>Fecha de publicación:</strong> 8 de septiembre de 2026. <strong>Consulta:</strong> 7 de octubre de 2026.</p>
+  </div>
+
+  <div class="card">
+    <h4>2. AI at Meta — Muse</h4>
+    <div class="copy-wrap">
+      <pre class="url-block" id="url-02">https://ai.meta.com/muse/</pre>
+      <button class="copyBtn" type="button" data-copy-target="url-02">Copiar</button>
+    </div>
+    <p><strong>Información utilizada:</strong> capacidades de Muse; diferencia entre chatbot, asistente
+      y agente; Connectors; navegación web; trabajo en segundo plano; aprobaciones; permisos;
+      actividad; disponibilidad de la aplicación; ejemplos de utilización.</p>
+    <p><strong>Consulta:</strong> 7 de octubre de 2026.</p>
+  </div>
+
+  <div class="card">
+    <h4>3. AI at Meta — Download Muse</h4>
+    <div class="copy-wrap">
+      <pre class="url-block" id="url-03">https://ai.meta.com/muse/download/</pre>
+      <button class="copyBtn" type="button" data-copy-target="url-03">Copiar</button>
+    </div>
+    <p><strong>Información utilizada:</strong> aplicación móvil; continuidad entre dispositivos;
+      disponibilidad de aplicación para Android/iPhone; Muse para Mac.</p>
+    <p><strong>Consulta:</strong> 7 de octubre de 2026.</p>
+  </div>
+
+  <div class="card">
+    <h4>4. Meta AI Research — How We Built Safety Into Muse</h4>
+    <div class="copy-wrap">
+      <pre class="url-block" id="url-04">https://research.meta.ai/blog/security-and-safety-for-ai-agents-our-approach-with-muse</pre>
+      <button class="copyBtn" type="button" data-copy-target="url-04">Copiar</button>
+    </div>
+    <p><strong>Información utilizada:</strong> arquitectura de seguridad; almacenamiento de datos;
+      credenciales; memoria; datos de entrenamiento; opción de exclusión del entrenamiento;
+      relación entre actividad web y publicidad.</p>
+    <p><strong>Consulta:</strong> 7 de octubre de 2026.</p>
+  </div>
+
+  <div class="card">
+    <h4>5. Meta — Todo lo que hemos anunciado en Meta Connect 2026</h4>
+    <div class="copy-wrap">
+      <pre class="url-block" id="url-05">https://about.fb.com/es/news/2026/09/todo-lo-que-hemos-anunciado-en-meta-connect-2026/</pre>
+      <button class="copyBtn" type="button" data-copy-target="url-05">Copiar</button>
+    </div>
+    <p><strong>Información utilizada:</strong> evolución de Muse; nuevos conectores; novedades de
+      Connect 2026; Muse para Mac; futuras funciones.</p>
+    <p><strong>Consulta:</strong> 7 de octubre de 2026.</p>
+  </div>
+
+  <div class="card">
+    <h4>6. WhatsApp Help Center</h4>
+    <div class="copy-wrap">
+      <pre class="url-block" id="url-06">https://faq.whatsapp.com/1516007700293140/?helpref=uf_share</pre>
+      <button class="copyBtn" type="button" data-copy-target="url-06">Copiar</button>
+    </div>
+    <p><strong>Uso:</strong> fuente solicitada específicamente para contrastar la parte relativa a WhatsApp.</p>
+    <div class="box warn">
+      <span class="box-title">Nota de verificación</span>
+      Durante esta investigación la página concreta no pudo recuperarse mediante la herramienta de
+      consulta utilizada. Por ese motivo <strong>no se ha utilizado para inventar procedimientos,
+      códigos o comandos</strong>.
+    </div>
+  </div>
+
+  <h3>Fuentes periodísticas / independientes</h3>
+
+  <div class="card">
+    <h4>7. Associated Press — Meta launches personal AI agent Muse</h4>
+    <div class="copy-wrap">
+      <pre class="url-block" id="url-07">https://apnews.com/article/3a4572eb4cf4e95d8a0dfdad6e6ca065</pre>
+      <button class="copyBtn" type="button" data-copy-target="url-07">Copiar</button>
+    </div>
+    <p><strong>Información utilizada:</strong> contexto del lanzamiento; descripción inicial de
+      disponibilidad; referencia a usuarios adultos; contraste independiente de las afirmaciones de Meta.</p>
+    <p><strong>Consulta:</strong> 7 de octubre de 2026.</p>
+  </div>
+
+  <div class="card">
+    <h4>8. Reuters — Apple introduces additional protections after Muse privacy controversy</h4>
+    <div class="copy-wrap">
+      <pre class="url-block" id="url-08">https://www.reuters.com/business/retail-consumer/apple-says-it-will-flag-ai-requests-for-mac-data-after-meta-muse-draws-complaints-2026-10-02/</pre>
+      <button class="copyBtn" type="button" data-copy-target="url-08">Copiar</button>
+    </div>
+    <p><strong>Información utilizada únicamente como contexto independiente</strong> sobre las
+      preocupaciones de seguridad surgidas alrededor de agentes con acceso a datos y ordenadores.</p>
+    <p>No se ha utilizado para afirmar que Muse tenga acceso no autorizado a datos.</p>
+    <p><strong>Consulta:</strong> 7 de octubre de 2026.</p>
+  </div>
+
+</section>
+
+<!-- ============================================================
+     PANEL: CRÉDITOS
+     ============================================================ -->
+<section class="panel" id="p-creditos" role="tabpanel" aria-label="Créditos">
+
+  <h2>Créditos</h2>
+
+  <div class="hero-svg-mount" data-svg-hero="true" role="img"
+       aria-label="Diagrama animado: tú defines el objetivo, el agente Muse lo procesa, Sentinel supervisa y las herramientas conectadas se activan solo con tu permiso, devolviéndote el resultado."></div>
+  <p class="svg-caption">
+    El mismo diagrama animado de la portada, generado desde una única plantilla:
+    <strong>tú</strong> → <strong>Muse</strong> → <strong>Sentinel</strong> → <strong>herramientas</strong> → resultado.
+  </p>
+
+  <div class="card author-card">
+    <h1>Rubén Sbarsky</h1>
+    <p class="author-role">Autor del tutorial</p>
+
+    <div>
+      <span class="version-badge">Versión V001</span>
+    </div>
+
+    <p class="stamp">07/10/2026 — 12:00:00</p>
+    <p class="lead" style="font-size:.85rem;margin-top:.2rem;">
+      Fecha y hora fijas de creación del tutorial (DD/MM/AAAA — HH:MM:SS, formato de 24 h).
+    </p>
+  </div>
+
+  <div class="card">
+    <h3>Sobre este tutorial</h3>
+    <p>
+      Tutorial práctico sobre <strong>Meta Muse</strong> y su integración con <strong>WhatsApp</strong>,
+      escrito con enfoque «para dummies»: qué es → para qué sirve → por qué importa → cómo se hace →
+      ejemplo → práctica → errores → resumen.
+    </p>
+    <p>
+      <strong>Estado de la información:</strong> 7 de octubre de 2026.
+    </p>
+    <p>
+      Todo el contenido de este archivo —HTML, CSS, JavaScript y SVG— está integrado en un solo
+      documento. No usa archivos externos, CDN, librerías ni fuentes externas. Funciona abriéndolo
+      directamente en el navegador, incluso sin conexión.
+    </p>
+  </div>
+
+  <div class="card">
+    <h3>Novedades de esta versión</h3>
+    <ul>
+      <li><strong>V001</strong> — Primera versión del tutorial completo.</li>
+      <li>SVG animado único, reutilizado en INICIO y en CRÉDITOS desde la misma plantilla, con ids únicos por copia.</li>
+      <li>Montaje por <code>innerHTML</code>, red de seguridad cada 800 ms y plan B con imagen SVG en línea.</li>
+      <li>Animación activa por defecto: sin pausa automática por <code>prefers-reduced-motion</code>.</li>
+      <li>Hoja de impresión completa: todos los paneles, <code>&lt;details&gt;</code> abiertos y SVG de todas las pestañas montados antes de imprimir.</li>
+      <li>Fecha y hora fijas escritas en el HTML, sin <code>new Date()</code>.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>Licencia y uso</h3>
+    <p>
+      Material educativo. Las marcas, productos y servicios mencionados pertenecen a sus respectivos
+      titulares. Las afirmaciones sobre Meta Muse se basan en las fuentes citadas en la pestaña
+      <strong>FUENTES</strong>, consultadas el 7 de octubre de 2026.
+    </p>
+  </div>
+
+</section>
+
+</main>
+
+<button class="to-top" id="toTop" type="button" title="Volver arriba" aria-label="Volver arriba">↑</button>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ==========================================================
+     UTILIDADES SEGURAS DE ALMACENAMIENTO
+     ========================================================== */
+  function lsGet(k) {
+    try { return window.localStorage.getItem(k); } catch (e) { return null; }
+  }
+  function lsSet(k, v) {
+    try { window.localStorage.setItem(k, v); } catch (e) { /* ignorar */ }
+  }
+  function lsDel(k) {
+    try { window.localStorage.removeItem(k); } catch (e) { /* ignorar */ }
+  }
+
+  /* ==========================================================
+     SVG ANIMADO — PLANTILLA ÚNICA + MONTAJE POR innerHTML
+     ========================================================== */
+  var seq = 0;
+  var TPL = null;
+  var imgMode = false;
+
+  function template() {
+    if (TPL) return TPL;
+    var src = document.getElementById('svgHeroSource');
+    if (!src) { TPL = { defs: '', art: '' }; return TPL; }
+
+    var defsEl = src.querySelector('defs');
+    var artEl = src.querySelector('#svgHero');
+
+    var d = defsEl ? defsEl.cloneNode(true) : document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    var g = artEl ? artEl.cloneNode(true) : document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+    var inner = d.querySelector ? d.querySelector('#svgHero') : null;
+    if (inner && inner.parentNode) inner.parentNode.removeChild(inner);
+
+    if (g.removeAttribute) g.removeAttribute('id');
+
+    TPL = { defs: d.innerHTML, art: g.outerHTML };
+
+    // Quitar el SVG fuente del DOM para que no siga animándose oculto.
+    if (src.parentNode) src.parentNode.removeChild(src);
+    return TPL;
+  }
+
+  function markup(uid) {
+    var t = template();
+    var s = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 260" width="100%" height="260"'
+          + ' preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">'
+          + '<defs>' + t.defs + '</defs>' + t.art + '</svg>';
+
+    // Ids únicos por copia (degradados y filtros)
+    var ids = ['gBg', 'gAcc', 'fGlow'];
+    for (var i = 0; i < ids.length; i++) {
+      var id = ids[i];
+      s = s.split('id="' + id + '"').join('id="' + id + '-' + uid + '"')
+           .split('url(#' + id + ')').join('url(#' + id + '-' + uid + ')');
+    }
+    return s;
+  }
+
+  function mountOne(m) {
+    if (!m) return;
+    m.textContent = '';
+
+    if (imgMode) {
+      var im = new Image();
+      im.alt = '';
+      im.decoding = 'async';
+      im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(markup('i' + (++seq)));
+      m.appendChild(im);
+      return;
+    }
+
+    m.innerHTML = markup('h' + (++seq));
+    var svg = m.querySelector('svg');
+    if (!svg) return;
+
+    var t0 = 0;
+    try {
+      svg.setCurrentTime(0);
+      svg.unpauseAnimations();
+      t0 = svg.getCurrentTime();
+    } catch (e) { return; }
+
+    // Plan B: si el reloj SMIL no avanza y el SVG es visible, usar <img>
+    window.setTimeout(function () {
+      if (document.hidden) return;
+      if (m.querySelector('svg') !== svg) return;
+      try {
+        var box = svg.getBoundingClientRect();
+        if (box.height > 0 && (svg.getCurrentTime() - t0) < 0.3) {
+          imgMode = true;
+          mountOne(m);
+        }
+      } catch (e) { /* ignorar */ }
+    }, 1600);
+  }
+
+  function mountActive() {
+    var list = document.querySelectorAll('.panel.active [data-svg-hero]');
+    for (var i = 0; i < list.length; i++) mountOne(list[i]);
+  }
+
+  function mountAll() {
+    var list = document.querySelectorAll('[data-svg-hero]');
+    for (var i = 0; i < list.length; i++) {
+      if (!list[i].firstElementChild) mountOne(list[i]);
+    }
+  }
+
+  function freezeSVGs() {
+    var svgs = document.querySelectorAll('[data-svg-hero] svg');
+    for (var i = 0; i < svgs.length; i++) {
+      try {
+        svgs[i].setCurrentTime(2.2);
+        svgs[i].pauseAnimations();
+      } catch (e) { /* ignorar */ }
+    }
+  }
+
+  function resumeSVGs() {
+    var svgs = document.querySelectorAll('[data-svg-hero] svg');
+    for (var i = 0; i < svgs.length; i++) {
+      try { svgs[i].unpauseAnimations(); } catch (e) { /* ignorar */ }
+    }
+  }
+
+  // Red de seguridad: si el panel visible tiene su contenedor vacío, volver a montarlo.
+  window.setInterval(function () {
+    if (document.hidden) return;
+    var list = document.querySelectorAll('.panel.active [data-svg-hero]');
+    for (var i = 0; i < list.length; i++) {
+      if (!list[i].firstElementChild) mountOne(list[i]);
+    }
+  }, 800);
+
+  /* ==========================================================
+     PESTAÑAS
+     ========================================================== */
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+  var panels = Array.prototype.slice.call(document.querySelectorAll('.panel'));
+
+  function activateTab(id, opts) {
+    opts = opts || {};
+    var found = false;
+    for (var i = 0; i < panels.length; i++) {
+      if (panels[i].id === id) { panels[i].classList.add('active'); found = true; }
+      else { panels[i].classList.remove('active'); }
+    }
+    if (!found) return false;
+
+    for (var j = 0; j < tabs.length; j++) {
+      var on = tabs[j].getAttribute('data-target') === id;
+      tabs[j].classList.toggle('active', on);
+      tabs[j].setAttribute('aria-selected', on ? 'true' : 'false');
+    }
+
+    mountActive();
+
+    if (opts.scroll !== false) {
+      try { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+      catch (e) { window.scrollTo(0, 0); }
+    }
+    return true;
+  }
+
+  for (var t = 0; t < tabs.length; t++) {
+    tabs[t].addEventListener('click', function () {
+      var id = this.getAttribute('data-target');
+      activateTab(id);
+      if (history.replaceState) history.replaceState(null, '', '#' + id);
+    });
+  }
+
+  window.addEventListener('hashchange', function () {
+    var id = location.hash.replace('#', '');
+    if (id) activateTab(id, { scroll: false });
+  });
+
+  /* ==========================================================
+     BÚSQUEDA
+     ========================================================== */
+  var searchInput = document.getElementById('searchInput');
+  var searchClear = document.getElementById('searchClear');
+  var searchInfo = document.getElementById('searchInfo');
+  var counter = { n: 0 };
+
+  function setSearchInfo(html) {
+    if (!html) { searchInfo.hidden = true; searchInfo.innerHTML = ''; return; }
+    searchInfo.hidden = false;
+    searchInfo.innerHTML = html;
+  }
+
+  function clearHighlights() {
+    var marks = document.querySelectorAll('mark.search-hl');
+    for (var i = marks.length - 1; i >= 0; i--) {
+      var m = marks[i];
+      var parent = m.parentNode;
+      if (!parent) continue;
+      parent.replaceChild(document.createTextNode(m.textContent), m);
+      parent.normalize();
+    }
+  }
+
+  function highlightNode(node, lower, q) {
+    var text = node.nodeValue;
+    var lowerText = text.toLowerCase();
+    var idx = lowerText.indexOf(lower);
+    if (idx === -1) return null;
+
+    var frag = document.createDocumentFragment();
+    var pos = 0;
+
+    while (idx !== -1) {
+      if (idx > pos) frag.appendChild(document.createTextNode(text.slice(pos, idx)));
+      var mark = document.createElement('mark');
+      mark.className = 'search-hl';
+      mark.style.background = '#facc15';
+      mark.style.color = '#111827';
+      mark.style.borderRadius = '3px';
+      mark.style.padding = '0 2px';
+      mark.textContent = text.slice(idx, idx + q.length);
+      frag.appendChild(mark);
+      counter.n++;
+      pos = idx + q.length;
+      if (counter.n > 400) break;
+      idx = lowerText.indexOf(lower, pos);
+    }
+    if (pos < text.length) frag.appendChild(document.createTextNode(text.slice(pos)));
+    return frag;
+  }
+
+  function doSearch(q) {
+    clearHighlights();
+    counter.n = 0;
+
+    if (!q || q.length < 2) {
+      setSearchInfo('Escribe al menos 2 caracteres para buscar.');
+      return;
+    }
+
+    var lower = q.toLowerCase();
+    var firstPanelId = null;
+    var firstMark = null;
+
+    for (var p = 0; p < panels.length; p++) {
+      var walker = document.createTreeWalker(
+        panels[p],
+        NodeFilter.SHOW_TEXT,
+        {
+          acceptNode: function (node) {
+            if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+            var par = node.parentNode;
+            if (!par) return NodeFilter.FILTER_REJECT;
+            var tag = par.nodeName ? par.nodeName.toLowerCase() : '';
+            if (tag === 'script' || tag === 'style' || tag === 'mark' || tag === 'svg') {
+              return NodeFilter.FILTER_REJECT;
+            }
+            return NodeFilter.FILTER_ACCEPT;
+          }
+        }
+      );
+
+      var nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+
+      for (var n = 0; n < nodes.length; n++) {
+        var node = nodes[n];
+        if (node.nodeValue.toLowerCase().indexOf(lower) === -1) continue;
+        var frag = highlightNode(node, lower, q);
+        if (frag && node.parentNode) {
+          node.parentNode.replaceChild(frag, node);
+          if (!firstPanelId) firstPanelId = panels[p].id;
+        }
+      }
+    }
+
+    if (counter.n === 0) {
+      setSearchInfo('Sin resultados para «<b>' + escapeHtml(q) + '</b>».');
+      return;
+    }
+
+    setSearchInfo('Coincidencias: <b>' + counter.n + '</b> para «<b>' + escapeHtml(q) + '</b>».');
+
+    if (firstPanelId) {
+      activateTab(firstPanelId, { scroll: false });
+      window.setTimeout(function () {
+        var mark = document.querySelector('.panel.active mark.search-hl');
+        if (mark && mark.scrollIntoView) {
+          mark.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 120);
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  if (searchInput) {
+    var searchTimer = null;
+    searchInput.addEventListener('input', function () {
+      window.clearTimeout(searchTimer);
+      var v = searchInput.value.trim();
+      searchTimer = window.setTimeout(function () { doSearch(v); }, 320);
+    });
+    searchInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        window.clearTimeout(searchTimer);
+        doSearch(searchInput.value.trim());
+      }
+      if (e.key === 'Escape') {
+        searchInput.value = '';
+        clearHighlights();
+        setSearchInfo('');
+      }
+    });
+  }
+  if (searchClear) {
+    searchClear.addEventListener('click', function () {
+      if (searchInput) searchInput.value = '';
+      clearHighlights();
+      setSearchInfo('');
+      if (searchInput) searchInput.focus();
+    });
+  }
+
+  /* ==========================================================
+     TAMAÑO DE TEXTO (A− / A+)
+     ========================================================== */
+  var sizeSteps = [87.5, 100, 112.5, 125, 137.5];
+  var sizeIndex = 1;
+
+  function applyFontSize() {
+    document.documentElement.style.fontSize = sizeSteps[sizeIndex] + '%';
+    lsSet('muse_tutorial_fontsize', String(sizeIndex));
+  }
+
+  var savedSize = lsGet('muse_tutorial_fontsize');
+  if (savedSize !== null) {
+    var si = parseInt(savedSize, 10);
+    if (!isNaN(si) && si >= 0 && si < sizeSteps.length) sizeIndex = si;
+  }
+  applyFontSize();
+
+  var btnBigger = document.getElementById('btnBigger');
+  var btnSmaller = document.getElementById('btnSmaller');
+
+  if (btnBigger) {
+    btnBigger.addEventListener('click', function () {
+      if (sizeIndex < sizeSteps.length - 1) { sizeIndex++; applyFontSize(); }
+    });
+  }
+  if (btnSmaller) {
+    btnSmaller.addEventListener('click', function () {
+      if (sizeIndex > 0) { sizeIndex--; applyFontSize(); }
+    });
+  }
+
+  /* ==========================================================
+     TEMA CLARO / OSCURO
+     ========================================================== */
+  var btnTheme = document.getElementById('btnTheme');
+
+  function applyTheme(light) {
+    document.body.classList.toggle('light', !!light);
+    lsSet('muse_tutorial_theme', light ? 'light' : 'dark');
+    if (btnTheme) btnTheme.textContent = light ? '🌗 Claro' : '🌗 Oscuro';
+  }
+
+  var savedTheme = lsGet('muse_tutorial_theme');
+  applyTheme(savedTheme === 'light');
+
+  if (btnTheme) {
+    btnTheme.addEventListener('click', function () {
+      applyTheme(!document.body.classList.contains('light'));
+    });
+  }
+
+  /* ==========================================================
+     COPIAR AL PORTAPAPELES
+     ========================================================== */
+  function copyText(text, btn) {
+    function done() {
+      if (!btn) return;
+      var old = btn.textContent;
+      btn.textContent = '¡Copiado!';
+      btn.classList.add('done');
+      window.setTimeout(function () {
+        btn.textContent = old;
+        btn.classList.remove('done');
+      }, 1500);
+    }
+
+    function fallback() {
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        ta.style.top = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        ta.setSelectionRange(0, ta.value.length);
+        var ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        if (ok) done();
+      } catch (e) { /* ignorar */ }
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(fallback);
+    } else {
+      fallback();
+    }
+  }
+
+  document.addEventListener('click', function (e) {
+    var target = e.target;
+    while (target && target !== document && !(target.classList && target.classList.contains('copyBtn'))) {
+      target = target.parentNode;
+    }
+    if (!target || target === document || !target.classList) return;
+
+    var id = target.getAttribute('data-copy-target');
+    var text = '';
+    if (id) {
+      var el = document.getElementById(id);
+      text = el ? el.textContent : '';
+    } else {
+      var wrap = target.parentNode;
+      var pre = wrap ? wrap.querySelector('pre, code') : null;
+      text = pre ? pre.textContent : '';
+    }
+    if (text) copyText(text, target);
+  });
+
+  /* ==========================================================
+     CHECKLIST + localStorage
+     ========================================================== */
+  var checklist = document.getElementById('finalChecklist');
+  var checkCount = document.getElementById('checkCount');
+  var checkReset = document.getElementById('checkReset');
+
+  function updateCheckCount() {
+    if (!checklist || !checkCount) return;
+    var boxes = checklist.querySelectorAll('input[type="checkbox"]');
+    var done = 0;
+    for (var i = 0; i < boxes.length; i++) if (boxes[i].checked) done++;
+    checkCount.textContent = done + ' / ' + boxes.length + ' marcados';
+  }
+
+  if (checklist) {
+    var boxes = checklist.querySelectorAll('input[type="checkbox"]');
+    for (var b = 0; b < boxes.length; b++) {
+      (function (box) {
+        var key = 'muse_tutorial_' + box.getAttribute('data-key');
+        if (lsGet(key) === '1') box.checked = true;
+        box.addEventListener('change', function () {
+          if (box.checked) lsSet(key, '1'); else lsDel(key);
+          updateCheckCount();
+        });
+      })(boxes[b]);
+    }
+    updateCheckCount();
+  }
+
+  if (checkReset) {
+    checkReset.addEventListener('click', function () {
+      if (!checklist) return;
+      var boxes2 = checklist.querySelectorAll('input[type="checkbox"]');
+      for (var i = 0; i < boxes2.length; i++) {
+        boxes2[i].checked = false;
+        lsDel('muse_tutorial_' + boxes2[i].getAttribute('data-key'));
+      }
+      updateCheckCount();
+    });
+  }
+
+  /* ==========================================================
+     BARRA DE PROGRESO + VOLVER ARRIBA
+     ========================================================== */
+  var progressFill = document.getElementById('progressFill');
+  var toTop = document.getElementById('toTop');
+
+  function onScroll() {
+    var doc = document.documentElement;
+    var max = doc.scrollHeight - doc.clientHeight;
+    var pct = max > 0 ? (doc.scrollTop / max) * 100 : 0;
+    if (progressFill) progressFill.style.width = pct.toFixed(2) + '%';
+    if (toTop) toTop.classList.toggle('show', doc.scrollTop > 420);
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  onScroll();
+
+  if (toTop) {
+    toTop.addEventListener('click', function () {
+      try { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+      catch (e) { window.scrollTo(0, 0); }
+    });
+  }
+
+  /* ==========================================================
+     IMPRIMIR / GUARDAR COMO PDF
+     ========================================================== */
+  var closedDetails = [];
+
+  function openAllDetails() {
+    closedDetails = [];
+    var ds = document.querySelectorAll('details');
+    for (var i = 0; i < ds.length; i++) {
+      if (!ds[i].open) {
+        closedDetails.push(ds[i]);
+        ds[i].open = true;
+      }
+    }
+  }
+
+  function restoreDetails() {
+    for (var i = 0; i < closedDetails.length; i++) {
+      if (closedDetails[i]) closedDetails[i].open = false;
+    }
+    closedDetails = [];
+  }
+
+  function inIframe() {
+    try { return window.self !== window.top; } catch (e) { return true; }
+  }
+
+  function showPrintNotice() {
+    var n = document.getElementById('printNotice');
+    if (!n) return;
+    n.hidden = false;
+    n.innerHTML = '<strong>Si el diálogo de impresión no se ha abierto:</strong> '
+      + 'este archivo puede estar mostrándose dentro de un visor o previsualizador que bloquea la impresión. '
+      + 'Abre el archivo directamente en el navegador (no dentro de un visor) y pulsa '
+      + '<strong>Ctrl+P</strong> (Windows/Linux) o <strong>Cmd+P</strong> (Mac).';
+  }
+
+  function preparePrint() {
+    openAllDetails();
+    mountAll();
+    freezeSVGs();
+  }
+
+  function finishPrint() {
+    restoreDetails();
+    resumeSVGs();
+  }
+
+  window.addEventListener('beforeprint', preparePrint);
+  window.addEventListener('afterprint', finishPrint);
+
+  var btnPrint = document.getElementById('btnPrint');
+  if (btnPrint) {
+    btnPrint.addEventListener('click', function () {
+      var failed = false;
+      preparePrint();
+
+      try {
+        window.print();
+      } catch (e) {
+        failed = true;
+      }
+
+      if (failed || inIframe()) showPrintNotice();
+
+      window.setTimeout(finishPrint, 400);
+    });
+  }
+
+  /* ==========================================================
+     ARRANQUE
+     ========================================================== */
+  function initialTabId() {
+    var h = location.hash.replace('#', '');
+    if (h) {
+      for (var i = 0; i < panels.length; i++) {
+        if (panels[i].id === h) return h;
+      }
+    }
+    return 'p-inicio';
+  }
+
+  function boot() {
+    activateTab(initialTabId(), { scroll: false });
+    mountActive();
+    // Reforzar el montaje tras el primer pintado (fuentes, layout, etc.)
+    window.setTimeout(mountActive, 60);
+    window.setTimeout(function () {
+      if (document.querySelectorAll('.panel.active [data-svg-hero]').length) mountActive();
+    }, 400);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+
+})();
+</script>
+</body>
+</html>
